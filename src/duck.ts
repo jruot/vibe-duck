@@ -60,8 +60,10 @@ function createHead(scale: number): THREE.Mesh {
 function createPeak(scale: number): THREE.Mesh {
     const geometry = new THREE.ConeGeometry(0.15 * scale, 0.3 * scale, 8);
     const peak = new THREE.Mesh(geometry, peakMaterial);
-    peak.rotation.z = -Math.PI / 2; // Point forward
-    peak.position.set(0.2 * scale, 0, 0); // Position relative to head center
+    // Rotate peak to point forward (+Z) relative to head
+    peak.rotation.x = Math.PI / 2;
+    // Position relative to head center (head is at +X end of body)
+    peak.position.set(0, 0, 0.2 * scale); // Position peak in front (+Z) of head
     peak.castShadow = true;
     return peak;
 }
@@ -122,8 +124,9 @@ function assembleDuck(scale: number): THREE.Group {
     eyeLeft.name = "eyeLeft";
     const eyeRight = eyeLeft.clone();
     eyeRight.name = "eyeRight";
-    eyeLeft.position.set(0.1 * scale, 0.1 * scale, 0.1 * scale);
-    eyeRight.position.set(0.1 * scale, 0.1 * scale, -0.1 * scale);
+    // Position relative to head center (head is at +X end of body, facing +Z)
+    eyeLeft.position.set(0.1 * scale, 0.1 * scale, 0.25 * scale); // Left eye (+X side)
+    eyeRight.position.set(-0.1 * scale, 0.1 * scale, 0.25 * scale); // Right eye (-X side)
     head.add(eyeLeft);
     head.add(eyeRight);
 
@@ -149,9 +152,8 @@ function assembleDuck(scale: number): THREE.Group {
     body.add(legLeft);
     body.add(legRight);
 
-    // Adjust overall duck orientation if needed (e.g., stand upright)
-    // Rotate model 90 degrees CCW to align front with +X axis (assuming default camera looks down -Z)
-    duck.rotation.y = Math.PI / 2;
+    // Duck should now be naturally oriented with its front along the +Z axis.
+    // No final group rotation needed here if movement logic assumes +Z is forward.
 
     // Add a bounding box helper for debugging collisions
     // const boxHelper = new THREE.BoxHelper(duck, 0xffff00);
