@@ -149,9 +149,11 @@ function assembleDuck(scale: number): THREE.Group {
     wingRight.position.set(-0.55 * scale, wingYPosition, 0); // Right wing (-X side)
 
     // Rotate wings to be horizontal and point outwards.
-    // Since the wing shape is in the XY plane, rotate around Z axis.
-    wingLeft.rotation.z = Math.PI / 2;  // Rotate left wing 90 degrees clockwise
-    wingRight.rotation.z = -Math.PI / 2; // Rotate right wing 90 degrees counter-clockwise
+    // The shape extends along its local +X in the XY plane.
+    // Left Wing (+X side): Align shape's +X with body's +X (outwards) -> No Z rotation needed.
+    wingLeft.rotation.z = 0;
+    // Right Wing (-X side): Align shape's +X with body's -X (outwards) -> 180 degree Z rotation needed.
+    wingRight.rotation.z = Math.PI;
 
     // Ensure other rotations are zero initially
     wingLeft.rotation.x = 0;
