@@ -155,25 +155,26 @@ export class PlayerController {
             const flapAngle = Math.sin(flapProgress * Math.PI) * (Math.PI / 3); // Angle of flap (adjust amplitude)
 
             // Determine the correct axis for flapping based on the new wing orientation.
-            // Wings are now horizontal (rotated -PI/2 on X) and point sideways (rotated PI/2 or -PI/2 on Y).
-            // Flapping up/down should correspond to rotation around the wing's local Y-axis (along its length).
-            const flapAxis = 'y'; // Changed from 'z'
+            // Wings are now horizontal (rotated +/-PI/2 on Z).
+            // Flapping up/down should correspond to rotation around the wing's local X-axis
+            // (the axis pointing from the body outwards along the wing's attachment).
+            const flapAxis = 'x'; // Changed from 'y'
 
-            // The base rotation on the new flapAxis (Y) is now 0 (or PI/2 and -PI/2, but we apply flap relative to this)
+            // The base rotation on the new flapAxis (X) is 0.
             // We directly set the rotation on the flap axis.
-            if (this.wingLeft) this.wingLeft.rotation[flapAxis] = Math.PI / 2 + flapAngle; // Add flap to base Y rotation
-            if (this.wingRight) this.wingRight.rotation[flapAxis] = -Math.PI / 2 - flapAngle; // Add flap to base Y rotation (opposite direction)
+            // Positive flapAngle should lift the wing tip up.
+            if (this.wingLeft) this.wingLeft.rotation[flapAxis] = flapAngle;
+            if (this.wingRight) this.wingRight.rotation[flapAxis] = flapAngle; // Both wings flap the same way relative to their local X
 
 
             if (this.flyTimer <= 0) {
                 this.isFlying = false;
                  // Reset wing position smoothly? Or snap back? Snap for now.
                  // Ensure we reset the correct axis back to its base angle.
-                const resetAxis = 'y'; // Should match flapAxis
-                const baseAngleLeft = Math.PI / 2; // Base Y rotation from duck assembly
-                const baseAngleRight = -Math.PI / 2; // Base Y rotation from duck assembly
-                if (this.wingLeft) this.wingLeft.rotation[resetAxis] = baseAngleLeft; // Reset to base angle
-                if (this.wingRight) this.wingRight.rotation[resetAxis] = baseAngleRight; // Reset to base angle
+                const resetAxis = 'x'; // Should match flapAxis
+                const baseAngle = 0; // Base X rotation is 0
+                if (this.wingLeft) this.wingLeft.rotation[resetAxis] = baseAngle; // Reset to base angle
+                if (this.wingRight) this.wingRight.rotation[resetAxis] = baseAngle; // Reset to base angle
             }
         }
 

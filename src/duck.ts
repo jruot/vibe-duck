@@ -88,9 +88,8 @@ function createWing(scale: number): THREE.Mesh {
     const wing = new THREE.Mesh(geometry, wingMaterial);
     wing.castShadow = true;
 
-    // Rotate the wing geometry to be horizontal (flat along XZ plane)
-    // The original shape was in XY, so rotate around X axis.
-    wing.rotation.x = -Math.PI / 2; // Rotate by -90 degrees
+    // Keep the wing vertical initially (in XY plane)
+    // We will rotate it into position during assembly.
 
     return wing;
 }
@@ -145,18 +144,21 @@ function assembleDuck(scale: number): THREE.Group {
     // Position relative to upright body (sides)
     // Y position ensures they are level with each other relative to the body center.
     const wingYPosition = 0.05 * scale;
-    wingLeft.position.set(0.4 * scale, wingYPosition, 0); // Left wing (+X side)
-    wingRight.position.set(-0.4 * scale, wingYPosition, 0); // Right wing (-X side)
+    // Increase X offset slightly to ensure wings are outside the body capsule (radius 0.5 * scale)
+    wingLeft.position.set(0.55 * scale, wingYPosition, 0); // Left wing (+X side)
+    wingRight.position.set(-0.55 * scale, wingYPosition, 0); // Right wing (-X side)
 
-    // Rotate wings to point outwards (sideways)
-    // Since they are already horizontal due to rotation in createWing,
-    // we rotate around Y axis.
-    wingLeft.rotation.y = Math.PI / 2;  // Point left wing's "front" (original +Y) outwards along +X
-    wingRight.rotation.y = -Math.PI / 2; // Point right wing's "front" (original +Y) outwards along -X
+    // Rotate wings to be horizontal and point outwards.
+    // Since the wing shape is in the XY plane, rotate around Z axis.
+    wingLeft.rotation.z = Math.PI / 2;  // Rotate left wing 90 degrees clockwise
+    wingRight.rotation.z = -Math.PI / 2; // Rotate right wing 90 degrees counter-clockwise
 
-    // Remove previous Z rotation tilt
-    wingLeft.rotation.z = 0;
-    wingRight.rotation.z = 0;
+    // Ensure other rotations are zero initially
+    wingLeft.rotation.x = 0;
+    wingLeft.rotation.y = 0;
+    wingRight.rotation.x = 0;
+    wingRight.rotation.y = 0;
+
 
     body.add(wingLeft);
     body.add(wingRight);
