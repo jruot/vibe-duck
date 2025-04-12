@@ -165,6 +165,10 @@ function assembleDuck(scale: number): THREE.Group {
     // const boxHelper = new THREE.BoxHelper(duck, 0xffff00);
     // duck.add(boxHelper); // Add helper to the duck group itself
 
+    // Rotate the entire duck assembly 180 degrees around the Y axis
+    // so that its visual front aligns with the positive Z direction.
+    duck.rotation.y = Math.PI;
+
     return duck;
 }
 
