@@ -82,14 +82,7 @@ for (let i = 0; i < totalDucklings; i++) {
     //     babyDuck.position.x += 10 * Math.sign(babyDuck.position.x || 1);
     //     babyDuck.position.z += 10 * Math.sign(babyDuck.position.z || 1);
     // }
-        0.25,
-        (Math.random() - 0.5) * 50
-    );
-    // Avoid placing near nest initially
-    if (babyDuck.position.distanceTo(nestPosition) < 5) {
-        babyDuck.position.x += 10 * Math.sign(babyDuck.position.x || 1);
-        babyDuck.position.z += 10 * Math.sign(babyDuck.position.z || 1);
-    }
+    // Removed erroneous lines causing syntax error here
 
     scene.add(babyDuck);
     babyDucks.push(babyDuck);
