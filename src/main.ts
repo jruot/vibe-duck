@@ -147,7 +147,8 @@ function animate() {
                         direction.normalize();
                         babyDuck.position.add(direction.clone().multiplyScalar(speed * 0.6)); // Move slower when idle
                         // Make duck face the direction it's moving (smoothly?)
-                        const targetQuaternion = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), direction); // Assumes model faces +Z
+                        // Model's perceived front is now along its local +X axis due to base rotation
+                        const targetQuaternion = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(1, 0, 0), direction);
                         babyDuck.quaternion.slerp(targetQuaternion, 0.1); // Smooth rotation
                         // babyDuck.lookAt(babyDuck.position.clone().add(direction)); // Instant lookAt
                     }
@@ -176,7 +177,8 @@ function animate() {
                         directionToTarget.normalize();
                         babyDuck.position.add(directionToTarget.clone().multiplyScalar(speed * DUCKLING_FOLLOW_SPEED_FACTOR));
                         // Look towards father (smoothly)
-                        const targetQuaternion = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), directionToTarget);
+                        // Model's perceived front is now along its local +X axis due to base rotation
+                        const targetQuaternion = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(1, 0, 0), directionToTarget);
                         babyDuck.quaternion.slerp(targetQuaternion, 0.1);
                         // babyDuck.lookAt(data.followTarget.position); // Instant lookAt
                     }
@@ -205,7 +207,8 @@ function animate() {
                     directionToNest.normalize();
                     babyDuck.position.add(directionToNest.clone().multiplyScalar(speed * DUCKLING_RETURN_SPEED_FACTOR));
                      // Look towards nest (smoothly)
-                    const targetQuaternion = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), directionToNest);
+                     // Model's perceived front is now along its local +X axis due to base rotation
+                    const targetQuaternion = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(1, 0, 0), directionToNest);
                     babyDuck.quaternion.slerp(targetQuaternion, 0.1);
                     // babyDuck.lookAt(data.targetPosition); // Instant lookAt
                 }
