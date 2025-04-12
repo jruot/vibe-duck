@@ -155,9 +155,10 @@ export class PlayerController {
             const flapAngle = Math.sin(flapProgress * Math.PI) * (Math.PI / 3); // Angle of flap (adjust amplitude)
 
             // Determine the correct axis for flapping based on wing orientation
-            // Assuming wings pivot around an axis roughly parallel to the body's forward direction (local X or Z?)
-            // If wings were added with ExtrudeGeometry along default XY plane, Z rotation might be correct. Test needed.
-            const flapAxis = 'z'; // Or 'x'? Needs testing based on createWing geometry
+            // Wings are created from a Shape in XY plane, extruded along Z.
+            // They are added to the body and slightly rotated around Y.
+            // Flapping up/down should correspond to rotation around the wing's local X-axis.
+            const flapAxis = 'x';
 
             if (this.wingLeft) this.wingLeft.rotation[flapAxis] = flapAngle;
             if (this.wingRight) this.wingRight.rotation[flapAxis] = -flapAngle; // Opposite direction
@@ -165,8 +166,10 @@ export class PlayerController {
             if (this.flyTimer <= 0) {
                 this.isFlying = false;
                  // Reset wing position smoothly? Or snap back? Snap for now.
-                if (this.wingLeft) this.wingLeft.rotation[flapAxis] = 0;
-                if (this.wingRight) this.wingRight.rotation[flapAxis] = 0;
+                 // Ensure we reset the correct axis.
+                const resetAxis = 'x'; // Should match flapAxis
+                if (this.wingLeft) this.wingLeft.rotation[resetAxis] = 0; // Reset flap angle
+                if (this.wingRight) this.wingRight.rotation[resetAxis] = 0; // Reset flap angle
             }
         }
 
