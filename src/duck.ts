@@ -150,7 +150,8 @@ function assembleDuck(scale: number): THREE.Group {
     body.add(legRight);
 
     // Adjust overall duck orientation if needed (e.g., stand upright)
-    duck.rotation.y = Math.PI; // Rotate model 180 degrees to align front with +Z axis
+    // Rotate model 90 degrees CCW to align front with +X axis (assuming default camera looks down -Z)
+    duck.rotation.y = Math.PI / 2;
 
     // Add a bounding box helper for debugging collisions
     // const boxHelper = new THREE.BoxHelper(duck, 0xffff00);
