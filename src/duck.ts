@@ -62,10 +62,9 @@ function createHead(scale: number): THREE.Mesh {
 function createPeak(scale: number): THREE.Mesh {
     const geometry = new THREE.ConeGeometry(0.15 * scale, 0.3 * scale, 8);
     const peak = new THREE.Mesh(geometry, peakMaterial);
-    // Rotate peak to point forward (+Z) relative to head
-    peak.rotation.x = Math.PI / 2;
+    // Peak (Cone) naturally points along +Z. No X rotation needed.
     // Position relative to new head center (slightly below center, forward)
-    peak.position.set(0, -0.05 * scale, 0.3 * scale);
+    peak.position.set(0, -0.05 * scale, 0.3 * scale); // Position it in front of the head center
     peak.castShadow = true;
     return peak;
 }
@@ -165,9 +164,8 @@ function assembleDuck(scale: number): THREE.Group {
     // const boxHelper = new THREE.BoxHelper(duck, 0xffff00);
     // duck.add(boxHelper); // Add helper to the duck group itself
 
-    // Rotate the entire duck assembly 180 degrees around the Y axis
-    // so that its visual front aligns with the positive Z direction.
-    duck.rotation.y = Math.PI;
+    // No final group rotation needed now. The duck should be assembled
+    // with its visual front naturally pointing along the local +Z axis.
 
     return duck;
 }
