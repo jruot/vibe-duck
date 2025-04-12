@@ -42,7 +42,7 @@ const legMaterial = new THREE.MeshStandardMaterial({
 function createBody(scale: number): THREE.Mesh {
     const geometry = new THREE.CapsuleGeometry(0.5 * scale, 0.5 * scale, { capSegments: 8, radialSegments: 12 });
     const body = new THREE.Mesh(geometry, bodyMaterial);
-    body.rotation.z = Math.PI / 2; // Orient horizontally
+    // Keep body upright (default capsule orientation is along Y)
     body.castShadow = true;
     body.receiveShadow = true;
     return body;
@@ -51,7 +51,8 @@ function createBody(scale: number): THREE.Mesh {
 function createHead(scale: number): THREE.Mesh {
     const geometry = new THREE.SphereGeometry(0.35 * scale, 16, 12);
     const head = new THREE.Mesh(geometry, bodyMaterial);
-    head.position.set(0.6 * scale, 0.3 * scale, 0); // Position relative to body center
+    // Position relative to upright body center (above and slightly forward)
+    head.position.set(0, 0.6 * scale, 0.15 * scale);
     head.castShadow = true;
     head.receiveShadow = true;
     return head;
@@ -62,8 +63,8 @@ function createPeak(scale: number): THREE.Mesh {
     const peak = new THREE.Mesh(geometry, peakMaterial);
     // Rotate peak to point forward (+Z) relative to head
     peak.rotation.x = Math.PI / 2;
-    // Position relative to head center (head is at +X end of body)
-    peak.position.set(0, 0, 0.2 * scale); // Position peak in front (+Z) of head
+    // Position relative to new head center (slightly below center, forward)
+    peak.position.set(0, -0.05 * scale, 0.3 * scale);
     peak.castShadow = true;
     return peak;
 }
@@ -124,9 +125,9 @@ function assembleDuck(scale: number): THREE.Group {
     eyeLeft.name = "eyeLeft";
     const eyeRight = eyeLeft.clone();
     eyeRight.name = "eyeRight";
-    // Position relative to head center (head is at +X end of body, facing +Z)
-    eyeLeft.position.set(0.1 * scale, 0.1 * scale, 0.25 * scale); // Left eye (+X side)
-    eyeRight.position.set(-0.1 * scale, 0.1 * scale, 0.25 * scale); // Right eye (-X side)
+    // Position relative to new head center (sides of head, slightly forward)
+    eyeLeft.position.set(0.15 * scale, 0.05 * scale, 0.2 * scale); // Left eye
+    eyeRight.position.set(-0.15 * scale, 0.05 * scale, 0.2 * scale); // Right eye
     head.add(eyeLeft);
     head.add(eyeRight);
 
@@ -135,10 +136,13 @@ function assembleDuck(scale: number): THREE.Group {
     wingLeft.name = "wingLeft"; // Name the left wing
     const wingRight = wingLeft.clone();
     wingRight.name = "wingRight"; // Name the right wing
-    wingLeft.position.set(0, 0.1 * scale, 0.4 * scale); // Position relative to body
-    wingLeft.rotation.y = -Math.PI / 6; // Angle slightly
-    wingRight.position.set(0, 0.1 * scale, -0.4 * scale);
-    wingRight.rotation.y = Math.PI / 6;
+    // Position relative to upright body (sides)
+    wingLeft.position.set(0.3 * scale, 0.1 * scale, 0); // Left wing (+X side)
+    wingLeft.rotation.y = Math.PI / 2; // Rotate to point outwards
+    wingLeft.rotation.z = -Math.PI / 8; // Angle slightly down
+    wingRight.position.set(-0.3 * scale, 0.1 * scale, 0); // Right wing (-X side)
+    wingRight.rotation.y = -Math.PI / 2; // Rotate to point outwards
+    wingRight.rotation.z = Math.PI / 8; // Angle slightly down
     body.add(wingLeft);
     body.add(wingRight);
 
@@ -147,8 +151,9 @@ function assembleDuck(scale: number): THREE.Group {
     legLeft.name = "legLeft";
     const legRight = legLeft.clone();
     legRight.name = "legRight";
-    legLeft.position.set(-0.2 * scale, -0.4 * scale, 0.15 * scale); // Position relative to body
-    legRight.position.set(-0.2 * scale, -0.4 * scale, -0.15 * scale);
+    // Position relative to upright body (below and slightly apart)
+    legLeft.position.set(0.15 * scale, -0.5 * scale, 0); // Left leg
+    legRight.position.set(-0.15 * scale, -0.5 * scale, 0); // Right leg
     body.add(legLeft);
     body.add(legRight);
 

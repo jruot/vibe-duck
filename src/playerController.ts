@@ -157,19 +157,28 @@ export class PlayerController {
             // Determine the correct axis for flapping based on wing orientation
             // Wings are created from a Shape in XY plane, extruded along Z.
             // They are added to the body and slightly rotated around Y.
-            // Flapping up/down should correspond to rotation around the wing's local X-axis.
-            const flapAxis = 'x';
+            // Flapping up/down should correspond to rotation around the wing's local Z-axis
+            // after the initial Y and Z rotations applied during creation.
+            const flapAxis = 'z';
 
-            if (this.wingLeft) this.wingLeft.rotation[flapAxis] = flapAngle;
-            if (this.wingRight) this.wingRight.rotation[flapAxis] = -flapAngle; // Opposite direction
+            // Adjust flap angle based on initial wing rotation to make it flap "up/down" correctly
+            // Left wing initial rotation.z is -PI/8, Right is +PI/8
+            // We add the flap angle to this base rotation.
+            const baseAngleLeft = -Math.PI / 8;
+            const baseAngleRight = Math.PI / 8;
+
+            if (this.wingLeft) this.wingLeft.rotation[flapAxis] = baseAngleLeft + flapAngle;
+            if (this.wingRight) this.wingRight.rotation[flapAxis] = baseAngleRight - flapAngle; // Opposite flap direction
 
             if (this.flyTimer <= 0) {
                 this.isFlying = false;
                  // Reset wing position smoothly? Or snap back? Snap for now.
-                 // Ensure we reset the correct axis.
-                const resetAxis = 'x'; // Should match flapAxis
-                if (this.wingLeft) this.wingLeft.rotation[resetAxis] = 0; // Reset flap angle
-                if (this.wingRight) this.wingRight.rotation[resetAxis] = 0; // Reset flap angle
+                 // Ensure we reset the correct axis back to its base angle.
+                const resetAxis = 'z'; // Should match flapAxis
+                const baseAngleLeft = -Math.PI / 8; // Base rotation from duck creation
+                const baseAngleRight = Math.PI / 8; // Base rotation from duck creation
+                if (this.wingLeft) this.wingLeft.rotation[resetAxis] = baseAngleLeft; // Reset to base angle
+                if (this.wingRight) this.wingRight.rotation[resetAxis] = baseAngleRight; // Reset to base angle
             }
         }
 
