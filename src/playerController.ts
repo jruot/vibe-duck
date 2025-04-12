@@ -19,7 +19,8 @@ export class PlayerController {
     private wingLeft?: THREE.Object3D;
     private wingRight?: THREE.Object3D;
 
-
+    private moveState = {
+        forward: 0, // -1 for backward, 1 for forward
         turn: 0,    // -1 for left, 1 for right
         jump: false // Add jump state
     };
