@@ -154,29 +154,24 @@ export class PlayerController {
             const flapProgress = (this.flyDuration - this.flyTimer) / this.flyDuration;
             const flapAngle = Math.sin(flapProgress * Math.PI) * (Math.PI / 3); // Angle of flap (adjust amplitude)
 
-            // Determine the correct axis for flapping based on wing orientation
-            // Wings are created from a Shape in XY plane, extruded along Z.
-            // They are added to the body and slightly rotated around Y.
-            // Flapping up/down should correspond to rotation around the wing's local Z-axis
-            // after the initial Y and Z rotations applied during creation.
-            const flapAxis = 'z';
+            // Determine the correct axis for flapping based on the new wing orientation.
+            // Wings are now horizontal (rotated -PI/2 on X) and point sideways (rotated PI/2 or -PI/2 on Y).
+            // Flapping up/down should correspond to rotation around the wing's local Y-axis (along its length).
+            const flapAxis = 'y'; // Changed from 'z'
 
-            // Adjust flap angle based on initial wing rotation to make it flap "up/down" correctly
-            // Left wing initial rotation.z is -PI/8, Right is +PI/8
-            // We add the flap angle to this base rotation.
-            const baseAngleLeft = -Math.PI / 8;
-            const baseAngleRight = Math.PI / 8;
+            // The base rotation on the new flapAxis (Y) is now 0 (or PI/2 and -PI/2, but we apply flap relative to this)
+            // We directly set the rotation on the flap axis.
+            if (this.wingLeft) this.wingLeft.rotation[flapAxis] = Math.PI / 2 + flapAngle; // Add flap to base Y rotation
+            if (this.wingRight) this.wingRight.rotation[flapAxis] = -Math.PI / 2 - flapAngle; // Add flap to base Y rotation (opposite direction)
 
-            if (this.wingLeft) this.wingLeft.rotation[flapAxis] = baseAngleLeft + flapAngle;
-            if (this.wingRight) this.wingRight.rotation[flapAxis] = baseAngleRight - flapAngle; // Opposite flap direction
 
             if (this.flyTimer <= 0) {
                 this.isFlying = false;
                  // Reset wing position smoothly? Or snap back? Snap for now.
                  // Ensure we reset the correct axis back to its base angle.
-                const resetAxis = 'z'; // Should match flapAxis
-                const baseAngleLeft = -Math.PI / 8; // Base rotation from duck creation
-                const baseAngleRight = Math.PI / 8; // Base rotation from duck creation
+                const resetAxis = 'y'; // Should match flapAxis
+                const baseAngleLeft = Math.PI / 2; // Base Y rotation from duck assembly
+                const baseAngleRight = -Math.PI / 2; // Base Y rotation from duck assembly
                 if (this.wingLeft) this.wingLeft.rotation[resetAxis] = baseAngleLeft; // Reset to base angle
                 if (this.wingRight) this.wingRight.rotation[resetAxis] = baseAngleRight; // Reset to base angle
             }

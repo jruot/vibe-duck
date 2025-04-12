@@ -87,6 +87,11 @@ function createWing(scale: number): THREE.Mesh {
     const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
     const wing = new THREE.Mesh(geometry, wingMaterial);
     wing.castShadow = true;
+
+    // Rotate the wing geometry to be horizontal (flat along XZ plane)
+    // The original shape was in XY, so rotate around X axis.
+    wing.rotation.x = -Math.PI / 2; // Rotate by -90 degrees
+
     return wing;
 }
 
@@ -136,13 +141,23 @@ function assembleDuck(scale: number): THREE.Group {
     wingLeft.name = "wingLeft"; // Name the left wing
     const wingRight = wingLeft.clone();
     wingRight.name = "wingRight"; // Name the right wing
-    // Position relative to upright body (sides) - Adjusted X and Y
-    wingLeft.position.set(0.4 * scale, 0.05 * scale, 0); // Left wing (+X side) - Moved further out and slightly lower
-    wingLeft.rotation.y = Math.PI / 2; // Rotate to point outwards
-    wingLeft.rotation.z = -Math.PI / 8; // Angle slightly down
-    wingRight.position.set(-0.4 * scale, 0.05 * scale, 0); // Right wing (-X side) - Moved further out and slightly lower
-    wingRight.rotation.y = -Math.PI / 2; // Rotate to point outwards
-    wingRight.rotation.z = Math.PI / 8; // Angle slightly down
+
+    // Position relative to upright body (sides)
+    // Y position ensures they are level with each other relative to the body center.
+    const wingYPosition = 0.05 * scale;
+    wingLeft.position.set(0.4 * scale, wingYPosition, 0); // Left wing (+X side)
+    wingRight.position.set(-0.4 * scale, wingYPosition, 0); // Right wing (-X side)
+
+    // Rotate wings to point outwards (sideways)
+    // Since they are already horizontal due to rotation in createWing,
+    // we rotate around Y axis.
+    wingLeft.rotation.y = Math.PI / 2;  // Point left wing's "front" (original +Y) outwards along +X
+    wingRight.rotation.y = -Math.PI / 2; // Point right wing's "front" (original +Y) outwards along -X
+
+    // Remove previous Z rotation tilt
+    wingLeft.rotation.z = 0;
+    wingRight.rotation.z = 0;
+
     body.add(wingLeft);
     body.add(wingRight);
 
