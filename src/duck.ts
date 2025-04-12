@@ -100,22 +100,28 @@ function createLeg(scale: number): THREE.Mesh {
 
 function assembleDuck(scale: number): THREE.Group {
     const duck = new THREE.Group();
+    duck.name = "duckGroup"; // Name the main group
 
     // Body
     const body = createBody(scale);
+    body.name = "body"; // Name the body
     duck.add(body);
 
     // Head
     const head = createHead(scale);
+    head.name = "head"; // Name the head
     body.add(head); // Add head relative to body
 
     // Peak
     const peak = createPeak(scale);
+    peak.name = "peak";
     head.add(peak); // Add peak relative to head
 
     // Eyes
     const eyeLeft = createEye(scale);
+    eyeLeft.name = "eyeLeft";
     const eyeRight = eyeLeft.clone();
+    eyeRight.name = "eyeRight";
     eyeLeft.position.set(0.1 * scale, 0.1 * scale, 0.1 * scale);
     eyeRight.position.set(0.1 * scale, 0.1 * scale, -0.1 * scale);
     head.add(eyeLeft);
@@ -123,7 +129,9 @@ function assembleDuck(scale: number): THREE.Group {
 
     // Wings
     const wingLeft = createWing(scale);
+    wingLeft.name = "wingLeft"; // Name the left wing
     const wingRight = wingLeft.clone();
+    wingRight.name = "wingRight"; // Name the right wing
     wingLeft.position.set(0, 0.1 * scale, 0.4 * scale); // Position relative to body
     wingLeft.rotation.y = -Math.PI / 6; // Angle slightly
     wingRight.position.set(0, 0.1 * scale, -0.4 * scale);
@@ -133,14 +141,16 @@ function assembleDuck(scale: number): THREE.Group {
 
     // Legs
     const legLeft = createLeg(scale);
+    legLeft.name = "legLeft";
     const legRight = legLeft.clone();
+    legRight.name = "legRight";
     legLeft.position.set(-0.2 * scale, -0.4 * scale, 0.15 * scale); // Position relative to body
     legRight.position.set(-0.2 * scale, -0.4 * scale, -0.15 * scale);
     body.add(legLeft);
     body.add(legRight);
 
     // Adjust overall duck orientation if needed (e.g., stand upright)
-    duck.rotation.y = -Math.PI / 2; // Point forward along positive Z
+    // duck.rotation.y = -Math.PI / 2; // REMOVED - Let controller handle orientation
 
     // Add a bounding box helper for debugging collisions
     // const boxHelper = new THREE.BoxHelper(duck, 0xffff00);

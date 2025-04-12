@@ -17,6 +17,10 @@ export class GameState {
         this.ducklingsFound = 0;
     }
 
+    public get totalDucklingsCount(): number {
+        return this.totalDucklings;
+    }
+
     public get allDucklingsFound(): boolean {
         return this.ducklingsFound >= this.totalDucklings;
     }

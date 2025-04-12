@@ -7,10 +7,21 @@ export class PlayerController {
     private turnSpeed: number = Math.PI; // Radians per second
     private velocity: THREE.Vector3 = new THREE.Vector3();
     private rotationVelocity: number = 0;
+    private verticalVelocity: number = 0; // For jumping/flying
+    private gravity: number = -9.8 * 2; // Adjusted gravity
+    private jumpStrength: number = 6.0;
+    private isJumping: boolean = false;
+    private isFlying: boolean = false; // State for wing animation
+    private flyTimer: number = 0;
+    private flyDuration: number = 0.3; // How long the flap animation lasts
 
-    private moveState = {
-        forward: 0, // -1 for backward, 1 for forward
+    // Add references to wings if needed for animation
+    private wingLeft?: THREE.Object3D;
+    private wingRight?: THREE.Object3D;
+
+
         turn: 0,    // -1 for left, 1 for right
+        jump: false // Add jump state
     };
 
     private thirdPersonOffset = new THREE.Vector3(0, 4, -8); // Camera offset from player
@@ -18,6 +29,17 @@ export class PlayerController {
     constructor(playerObject: THREE.Object3D, camera: THREE.PerspectiveCamera) {
         this.playerObject = playerObject;
         this.camera = camera;
+        // Find wings for animation
+        const body = this.playerObject.getObjectByName('body'); // Find body by name
+        if (body) {
+             this.wingLeft = body.getObjectByName('wingLeft');
+             this.wingRight = body.getObjectByName('wingRight');
+             if (!this.wingLeft || !this.wingRight) {
+                 console.warn("Could not find wing objects by name for animation.");
+             }
+        } else {
+            console.warn("Could not find body object by name.");
+        }
         this.setupInputListeners();
     }
 
@@ -44,6 +66,10 @@ export class PlayerController {
             case 'KeyD':
                 this.moveState.turn = -1;
                 break;
+            case 'Space':
+                // Allow jump attempt even if already in air, but only trigger if on ground later
+                this.moveState.jump = true;
+                break;
         }
     }
 
@@ -63,17 +89,51 @@ export class PlayerController {
                 break;
             case 'ArrowRight':
             case 'KeyD':
+                // Ensure we only stop turning right if we *were* turning right
                 if (this.moveState.turn < 0) this.moveState.turn = 0;
+                break;
+             case 'Space':
+                this.moveState.jump = false; // Reset jump flag on key up
                 break;
         }
     }
 
     public update(deltaTime: number) {
+        const groundY = 0.5; // Define ground level Y
+        const onGround = this.playerObject.position.y <= groundY + 0.01; // Check if player is on the ground (add small tolerance)
+
+        // --- Jumping / Vertical Movement ---
+        if (onGround) {
+            this.verticalVelocity = 0; // Reset vertical velocity when on ground
+            this.isJumping = false; // Can jump again
+            if (this.moveState.jump) {
+                this.verticalVelocity = this.jumpStrength; // Apply jump force
+                this.isJumping = true;
+                this.isFlying = true; // Start wing flap animation
+                this.flyTimer = this.flyDuration;
+                // this.moveState.jump = false; // Consume jump input immediately? Or on keyup? Keyup is better.
+            }
+        } else {
+            // Apply gravity
+            this.verticalVelocity += this.gravity * deltaTime;
+        }
+
+        // Apply vertical movement
+        this.playerObject.position.y += this.verticalVelocity * deltaTime;
+
+        // Prevent falling through the floor
+        if (this.playerObject.position.y < groundY) {
+            this.playerObject.position.y = groundY;
+            this.verticalVelocity = 0; // Stop falling
+            this.isJumping = false;
+        }
+
+
         // --- Rotation ---
         this.rotationVelocity = this.moveState.turn * this.turnSpeed;
         this.playerObject.rotateY(this.rotationVelocity * deltaTime);
 
-        // --- Movement ---
+        // --- Planar Movement ---
         const forwardDirection = new THREE.Vector3();
         this.playerObject.getWorldDirection(forwardDirection);
         // Use only X and Z for planar movement, normalize to prevent faster diagonal speed
@@ -82,8 +142,33 @@ export class PlayerController {
 
         this.velocity.copy(forwardDirection).multiplyScalar(this.moveState.forward * this.moveSpeed);
 
-        // Apply movement
+        // Apply planar movement
         this.playerObject.position.add(this.velocity.clone().multiplyScalar(deltaTime));
+
+
+        // --- Wing Animation ---
+        if (this.isFlying) {
+            this.flyTimer -= deltaTime;
+            // Simple flap up/down based on sine wave mapped to duration
+            const flapProgress = (this.flyDuration - this.flyTimer) / this.flyDuration;
+            const flapAngle = Math.sin(flapProgress * Math.PI) * (Math.PI / 3); // Angle of flap (adjust amplitude)
+
+            // Determine the correct axis for flapping based on wing orientation
+            // Assuming wings pivot around an axis roughly parallel to the body's forward direction (local X or Z?)
+            // If wings were added with ExtrudeGeometry along default XY plane, Z rotation might be correct. Test needed.
+            const flapAxis = 'z'; // Or 'x'? Needs testing based on createWing geometry
+
+            if (this.wingLeft) this.wingLeft.rotation[flapAxis] = flapAngle;
+            if (this.wingRight) this.wingRight.rotation[flapAxis] = -flapAngle; // Opposite direction
+
+            if (this.flyTimer <= 0) {
+                this.isFlying = false;
+                 // Reset wing position smoothly? Or snap back? Snap for now.
+                if (this.wingLeft) this.wingLeft.rotation[flapAxis] = 0;
+                if (this.wingRight) this.wingRight.rotation[flapAxis] = 0;
+            }
+        }
+
 
         // --- Camera Update (Third-Person) ---
         // Calculate desired camera position based on player's rotation and offset
