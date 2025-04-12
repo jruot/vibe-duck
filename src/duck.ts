@@ -40,7 +40,8 @@ const legMaterial = new THREE.MeshStandardMaterial({
 // --- Helper Function to Create Duck Parts ---
 
 function createBody(scale: number): THREE.Mesh {
-    const geometry = new THREE.CapsuleGeometry(0.5 * scale, 0.5 * scale, { capSegments: 8, radialSegments: 12 });
+    // Corrected constructor: CapsuleGeometry(radius, length, capSegments, radialSegments)
+    const geometry = new THREE.CapsuleGeometry(0.5 * scale, 0.5 * scale, 8, 12);
     const body = new THREE.Mesh(geometry, bodyMaterial);
     // Keep body upright (default capsule orientation is along Y)
     body.castShadow = true;

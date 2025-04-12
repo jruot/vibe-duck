@@ -10,7 +10,7 @@ export class PlayerController {
     private verticalVelocity: number = 0; // For jumping/flying
     private gravity: number = -9.8 * 2; // Adjusted gravity
     private jumpStrength: number = 6.0;
-    private isJumping: boolean = false;
+    // private isJumping: boolean = false; // Removed as it was unused
     private isFlying: boolean = false; // State for wing animation
     private flyTimer: number = 0;
     private flyDuration: number = 0.3; // How long the flap animation lasts
@@ -106,10 +106,10 @@ export class PlayerController {
         // --- Jumping / Vertical Movement ---
         if (onGround) {
             this.verticalVelocity = 0; // Reset vertical velocity when on ground
-            this.isJumping = false; // Can jump again
+            // this.isJumping = false; // Removed
             if (this.moveState.jump) {
                 this.verticalVelocity = this.jumpStrength; // Apply jump force
-                this.isJumping = true;
+                // this.isJumping = true; // Removed
                 this.isFlying = true; // Start wing flap animation
                 this.flyTimer = this.flyDuration;
                 // this.moveState.jump = false; // Consume jump input immediately? Or on keyup? Keyup is better.
@@ -126,7 +126,7 @@ export class PlayerController {
         if (this.playerObject.position.y < groundY) {
             this.playerObject.position.y = groundY;
             this.verticalVelocity = 0; // Stop falling
-            this.isJumping = false;
+            // this.isJumping = false; // Removed
         }
 
 
