@@ -135,19 +135,19 @@ export class PlayerController {
     }
 
     private handleMouseDown(event: MouseEvent) {
-        // Use right mouse button (button index 2) for camera control/pointer lock
-        if (event.button === 2) {
-            this.moveState.mouseLeftDown = true; // Keep using this state variable name for simplicity
+        // Use left mouse button (button index 0) for camera control/pointer lock
+        if (event.button === 0) {
+            this.moveState.mouseLeftDown = true; // State variable indicates mouse is down for control
             // Request pointer lock on the canvas element
             this.canvas.requestPointerLock();
         }
     }
 
     private handleMouseUp(event: MouseEvent) {
-        // Use right mouse button (button index 2)
-        if (event.button === 2) {
-            this.moveState.mouseLeftDown = false; // Keep using this state variable name
-            // Exit pointer lock when right mouse is released
+        // Use left mouse button (button index 0)
+        if (event.button === 0) {
+            this.moveState.mouseLeftDown = false; // Reset state variable
+            // Exit pointer lock when left mouse is released
             document.exitPointerLock();
         }
     }
