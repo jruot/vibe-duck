@@ -28,7 +28,7 @@ export class PlayerController {
 
 
     // Camera control properties
-    private cameraOffset: THREE.Vector3 = new THREE.Vector3(0, 3, 7); // Initial offset from player (behind, up)
+    // private cameraOffset: THREE.Vector3 = new THREE.Vector3(0, 3, 7); // Removed: Initial offset from player (behind, up) - Now calculated dynamically
     private cameraTarget: THREE.Vector3 = new THREE.Vector3(); // Point camera looks at
     private cameraYaw: number = 0; // Horizontal rotation around player (radians)
     private cameraPitch: number = Math.PI / 8; // Vertical rotation (radians), slightly looking down
