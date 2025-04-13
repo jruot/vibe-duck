@@ -259,10 +259,19 @@ export class PlayerController {
             this.moveState.jump = false; // Consume jump input regardless of success
         }
 
-        // Apply gravity if not on ground or if vertical velocity is positive (moving up)
-        if (!onGround || this.verticalVelocity > 0) {
+        // Apply gravity logic
+        if (!onGround) {
+            let currentGravity = this.gravity;
+            // If airborne AND not actively flapping (timer ran out), apply glide gravity
+            if (!this.isFlying && this.verticalVelocity <= 0) { // Only glide when falling or stationary vertically
+                currentGravity *= this.glideGravityFactor;
+            }
+            this.verticalVelocity += currentGravity * deltaTime;
+        } else if (this.verticalVelocity > 0) {
+            // Apply normal gravity if moving upwards even when technically on ground (e.g. start of jump)
              this.verticalVelocity += this.gravity * deltaTime;
         }
+
 
         this.velocity.y = this.verticalVelocity;
 
