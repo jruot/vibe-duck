@@ -131,9 +131,10 @@ function assembleDuck(scale: number): THREE.Group {
     eyeLeft.name = "eyeLeft";
     const eyeRight = eyeLeft.clone();
     eyeRight.name = "eyeRight";
-    // Position relative to new head center (sides of head, slightly forward)
-    eyeLeft.position.set(0.15 * scale, 0.05 * scale, 0.2 * scale); // Left eye
-    eyeRight.position.set(-0.15 * scale, 0.05 * scale, 0.2 * scale); // Right eye
+    // Position relative to new head center (sides of head, further forward)
+    // Head radius is 0.35 * scale. Move eyes closer to the surface.
+    eyeLeft.position.set(0.18 * scale, 0.05 * scale, 0.3 * scale); // Left eye (moved out on X and forward on Z)
+    eyeRight.position.set(-0.18 * scale, 0.05 * scale, 0.3 * scale); // Right eye (moved out on X and forward on Z)
     head.add(eyeLeft);
     head.add(eyeRight);
 
