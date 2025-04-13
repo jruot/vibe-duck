@@ -1,8 +1,10 @@
 import * as THREE from 'three';
+import * as THREE from 'three';
 import { createGround } from './ground';
 import { createPond } from './pond';
 import { createRocks } from './rocks';
 import { createNest } from './nest';
+import { createTrees } from './tree'; // Import the new tree function
 
 // Interface for the returned world data
 export interface WorldData {
@@ -30,10 +32,22 @@ export function createWorld(scene: THREE.Scene): WorldData {
 
 
     // Rocks - Scatter within ground bounds, avoiding the pond
-    createRocks(scene, pondPosition, pondRadius, 20, groundSize.width, groundSize.height);
+    createRocks(scene, pondPosition, pondRadius, 30, groundSize.width, groundSize.height); // Increased rock count slightly
 
     // Nest
-    const { nestPosition } = createNest(scene); // Get nest position
+    const { nest, nestPosition } = createNest(scene); // Get nest mesh and position
+    let nestRadius = 0;
+    if (nest.geometry instanceof THREE.TorusGeometry) {
+        nestRadius = nest.geometry.parameters.radius + nest.geometry.parameters.tube; // Outer radius
+    } else {
+        console.warn("Nest geometry is not TorusGeometry, using default radius for tree placement.");
+        nestRadius = 2.5; // Default based on TorusGeometry(2, 0.5, ...)
+    }
+
+
+    // Trees - Scatter within ground bounds, avoiding pond and nest
+    createTrees(scene, pondPosition, pondRadius, nestPosition, nestRadius, 25, groundSize.width, groundSize.height);
+
 
     return { nestPosition }; // Return key positions
 }
