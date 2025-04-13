@@ -186,6 +186,17 @@ export class PlayerController {
         this.cameraDistance = THREE.MathUtils.clamp(this.cameraDistance, this.minCameraDistance, this.maxCameraDistance);
     }
 
+    private handleBlur() {
+        // Reset all movement states when the window loses focus
+        this.moveState.forward = false;
+        this.moveState.backward = false;
+        this.moveState.strafeLeft = false;
+        this.moveState.strafeRight = false;
+        // Optionally reset jump state too, though it's less likely to get stuck
+        // this.moveState.jump = false;
+        // Don't reset mouseLeftDown here, as pointer lock loss handles that
+    }
+
      private handlePointerLockChange() {
         // Check if pointer lock is no longer on the canvas
         if (document.pointerLockElement !== this.canvas) {
