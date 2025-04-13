@@ -70,9 +70,11 @@ function createPeak(scale: number): THREE.Mesh {
 }
 
 function createEye(scale: number): THREE.Mesh {
-    const geometry = new THREE.SphereGeometry(0.05 * scale, 8, 8);
+    // Make eyes smaller
+    const geometry = new THREE.SphereGeometry(0.025 * scale, 6, 6); // Reduced radius and segments
     const eye = new THREE.Mesh(geometry, eyeMaterial);
-    // Position relative to head center
+    // Position relative to head center (adjust if needed due to smaller size)
+    // Keep original positioning for now, can be tweaked later if they look off.
     eye.position.set(0.1 * scale, 0.1 * scale, 0.1 * scale);
     return eye;
 }
