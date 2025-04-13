@@ -6,7 +6,8 @@ import { PlayerController } from './playerController';
 import { GameState } from './gameState';
 
 // Basic Scene Setup
-const { scene, camera, renderer } = setupScene('game-canvas');
+// Destructure canvas from setupScene result
+const { scene, camera, renderer, canvas } = setupScene('game-canvas');
 
 // Game State
 const gameState = new GameState();
@@ -89,7 +90,8 @@ for (let i = 0; i < totalDucklings; i++) {
 }
 
 // Player Control
-const playerController = new PlayerController(fatherDuck, camera);
+// Pass the canvas element to the controller
+const playerController = new PlayerController(fatherDuck, camera, canvas);
 
 // UI Update
 const ducklingCountElement = document.getElementById('duckling-count');

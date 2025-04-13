@@ -13,6 +13,7 @@ interface MoveState {
 export class PlayerController {
     private playerObject: THREE.Object3D;
     private camera: THREE.PerspectiveCamera;
+    private canvas: HTMLCanvasElement; // Add canvas reference
     private moveSpeed: number = 5.0; // Units per second
     // private turnSpeed: number = Math.PI; // Radians per second - Turning is now mouse/movement driven
     private velocity: THREE.Vector3 = new THREE.Vector3();
@@ -52,9 +53,10 @@ export class PlayerController {
     private targetQuaternion: THREE.Quaternion = new THREE.Quaternion();
     private rotationSpeed: number = Math.PI * 2; // Radians per second for smoothing player rotation
 
-    constructor(playerObject: THREE.Object3D, camera: THREE.PerspectiveCamera) {
+    constructor(playerObject: THREE.Object3D, camera: THREE.PerspectiveCamera, canvas: HTMLCanvasElement) {
         this.playerObject = playerObject;
         this.camera = camera;
+        this.canvas = canvas; // Store canvas reference
         // Initialize target quaternion to player's current rotation
         this.targetQuaternion.copy(this.playerObject.quaternion);
         // Find wings for animation
@@ -136,8 +138,8 @@ export class PlayerController {
         // Use right mouse button (button index 2) for camera control/pointer lock
         if (event.button === 2) {
             this.moveState.mouseLeftDown = true; // Keep using this state variable name for simplicity
-            // Request pointer lock when right mouse is pressed
-            document.body.requestPointerLock();
+            // Request pointer lock on the canvas element
+            this.canvas.requestPointerLock();
         }
     }
 
@@ -151,8 +153,8 @@ export class PlayerController {
     }
 
     private handleMouseMove(event: MouseEvent) {
-        // Only adjust camera if pointer is locked (implies left mouse is down)
-        if (document.pointerLockElement === document.body) {
+        // Only adjust camera if pointer is locked to the canvas
+        if (document.pointerLockElement === this.canvas) {
             this.cameraYaw -= event.movementX * this.mouseSensitivity;
             // Invert vertical mouse look by adding movementY instead of subtracting
             this.cameraPitch += event.movementY * this.mouseSensitivity;
@@ -162,7 +164,8 @@ export class PlayerController {
     }
 
      private handlePointerLockChange() {
-        if (document.pointerLockElement !== document.body) {
+        // Check if pointer lock is no longer on the canvas
+        if (document.pointerLockElement !== this.canvas) {
             // If pointer lock is lost unexpectedly (e.g., pressing Esc or releasing right button),
             // ensure mouse state is updated.
             this.moveState.mouseLeftDown = false;
@@ -286,8 +289,8 @@ export class PlayerController {
         window.removeEventListener('mouseup', this.handleMouseUp);
         window.removeEventListener('mousemove', this.handleMouseMove);
         document.removeEventListener('pointerlockchange', this.handlePointerLockChange);
-        // Ensure pointer lock is exited if the controller is disposed while active
-        if (document.pointerLockElement === document.body) {
+        // Ensure pointer lock is exited if the controller is disposed while active on the canvas
+        if (document.pointerLockElement === this.canvas) {
             document.exitPointerLock();
         }
     }
