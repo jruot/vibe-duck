@@ -35,6 +35,10 @@ export class PlayerController {
     private minPitch: number = -Math.PI / 4; // Limit looking up
     private maxPitch: number = Math.PI / 2 - 0.1; // Limit looking down
     private mouseSensitivity: number = 0.002;
+    private cameraDistance: number = 7.0; // Current distance from player
+    private minCameraDistance: number = 2.0; // Closest zoom
+    private maxCameraDistance: number = 15.0; // Furthest zoom
+    private zoomSpeed: number = 0.5; // How much distance changes per scroll unit
 
     // Add references to wings if needed for animation
     private wingLeft?: THREE.Object3D;
@@ -81,6 +85,8 @@ export class PlayerController {
         window.addEventListener('mousedown', this.handleMouseDown.bind(this));
         window.addEventListener('mouseup', this.handleMouseUp.bind(this));
         window.addEventListener('mousemove', this.handleMouseMove.bind(this));
+        // Mouse Wheel for Zoom
+        window.addEventListener('wheel', this.handleMouseWheel.bind(this), { passive: false }); // Use non-passive to allow preventDefault
         // Pointer Lock
         document.addEventListener('pointerlockchange', this.handlePointerLockChange.bind(this), false);
     }
@@ -161,6 +167,18 @@ export class PlayerController {
             // Clamp pitch to avoid flipping over
             this.cameraPitch = Math.max(this.minPitch, Math.min(this.maxPitch, this.cameraPitch));
         }
+    }
+
+    private handleMouseWheel(event: WheelEvent) {
+        // Prevent the default page scroll behavior
+        event.preventDefault();
+
+        // Adjust camera distance based on scroll direction (deltaY)
+        const zoomAmount = event.deltaY * 0.01 * this.zoomSpeed; // Scale deltaY and apply speed
+        this.cameraDistance += zoomAmount;
+
+        // Clamp the distance within min/max limits
+        this.cameraDistance = THREE.MathUtils.clamp(this.cameraDistance, this.minCameraDistance, this.maxCameraDistance);
     }
 
      private handlePointerLockChange() {
@@ -263,15 +281,22 @@ export class PlayerController {
 
 
         // --- Camera Update ---
-        // Calculate desired camera position based on yaw, pitch, and offset
-        const cameraOffsetRotated = this.cameraOffset.clone();
-        const spherical = new THREE.Spherical().setFromVector3(cameraOffsetRotated);
-        spherical.theta = this.cameraYaw; // Horizontal angle based on mouse movement
-        spherical.phi = Math.PI / 2 - this.cameraPitch; // Vertical angle based on mouse movement
-        spherical.makeSafe(); // Ensure phi is within valid range
-        cameraOffsetRotated.setFromSpherical(spherical);
+        // Calculate camera direction based on yaw and pitch
+        const cameraDirectionOffset = new THREE.Vector3(0, 0, 1); // Start with base direction
+        const spherical = new THREE.Spherical();
+        spherical.setFromVector3(cameraDirectionOffset); // Set initial vector
+        spherical.theta = this.cameraYaw; // Apply horizontal rotation (yaw)
+        spherical.phi = Math.PI / 2 - this.cameraPitch; // Apply vertical rotation (pitch)
+        spherical.makeSafe(); // Ensure phi is valid
 
-        const desiredCameraPosition = this.playerObject.position.clone().add(cameraOffsetRotated);
+        // Convert spherical coordinates back to a direction vector
+        cameraDirectionOffset.setFromSpherical(spherical);
+
+        // Scale the direction vector by the current camera distance
+        const finalOffset = cameraDirectionOffset.multiplyScalar(this.cameraDistance);
+
+        // Calculate desired camera position: player position + final offset
+        const desiredCameraPosition = this.playerObject.position.clone().add(finalOffset);
 
         // Set camera position (can add smoothing later if needed)
         this.camera.position.copy(desiredCameraPosition);
@@ -288,6 +313,7 @@ export class PlayerController {
         window.removeEventListener('mousedown', this.handleMouseDown);
         window.removeEventListener('mouseup', this.handleMouseUp);
         window.removeEventListener('mousemove', this.handleMouseMove);
+        window.removeEventListener('wheel', this.handleMouseWheel); // Remove wheel listener
         document.removeEventListener('pointerlockchange', this.handlePointerLockChange);
         // Ensure pointer lock is exited if the controller is disposed while active on the canvas
         if (document.pointerLockElement === this.canvas) {
