@@ -27,6 +27,7 @@ export class PlayerController {
     private flyDuration: number = 0.3; // How long the flap animation lasts
     private airborneJumpCount: number = 0; // Counter for consecutive jumps in the air
     private readonly maxAirborneJumps: number = 10; // Limit for airborne jumps
+    private readonly glideGravityFactor: number = 0.2; // Factor to reduce gravity when gliding (e.g., 20% of normal gravity)
 
 
     // Camera control properties
