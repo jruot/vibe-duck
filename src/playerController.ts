@@ -188,21 +188,17 @@ export class PlayerController {
         const isMoving = inputVector.lengthSq() > 0.01; // Check if there's movement input
 
         // --- Player Rotation ---
-        if (isMoving && (this.moveState.forward || this.moveState.backward)) {
-            // Only rotate player model if moving forward/backward (W/S keys)
-            // Calculate target rotation based only on forward/backward component relative to camera
-            const forwardMovementDirection = new THREE.Vector3();
-            if (this.moveState.forward) forwardMovementDirection.add(flatCameraDirection);
-            if (this.moveState.backward) forwardMovementDirection.sub(flatCameraDirection);
+        // Rotate player to align with camera's forward direction when moving forward or backward (W/S)
+        if (this.moveState.forward || this.moveState.backward) {
+            // Target direction is always the camera's flat forward direction
+            const targetAngle = Math.atan2(flatCameraDirection.x, flatCameraDirection.z);
+            this.targetQuaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), targetAngle);
 
-            if (forwardMovementDirection.lengthSq() > 0.01) {
-                 // Calculate angle towards movement direction in the XZ plane
-                const targetAngle = Math.atan2(forwardMovementDirection.x, forwardMovementDirection.z);
-                this.targetQuaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), targetAngle);
-            }
+            // Smoothly rotate player towards the target camera direction
+            this.playerObject.quaternion.rotateTowards(this.targetQuaternion, this.rotationSpeed * deltaTime);
         }
-        // Smoothly rotate player towards target rotation
-        this.playerObject.quaternion.rotateTowards(this.targetQuaternion, this.rotationSpeed * deltaTime);
+        // Note: If only strafing (A/D), the player's rotation is not forced by movement keys,
+        // allowing free look with the mouse without the body snapping.
 
 
         // --- Velocity Calculation ---
