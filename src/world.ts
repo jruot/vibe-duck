@@ -4,7 +4,8 @@ import { createGround } from './ground';
 import { createPond } from './pond';
 import { createRocks } from './rocks';
 import { createNest } from './nest';
-import { createTrees } from './tree'; // Import the new tree function
+import { createTrees } from './tree';
+import { createBushes } from './bush'; // Import the new bush function
 
 // Interface for the returned world data
 export interface WorldData {
@@ -47,6 +48,9 @@ export function createWorld(scene: THREE.Scene): WorldData {
 
     // Trees - Scatter within ground bounds, avoiding pond and nest
     createTrees(scene, pondPosition, pondRadius, nestPosition, nestRadius, 25, groundSize.width, groundSize.height);
+
+    // Bushes - Scatter within ground bounds, avoiding pond and nest
+    createBushes(scene, pondPosition, pondRadius, nestPosition, nestRadius, 40, groundSize.width, groundSize.height);
 
 
     return { nestPosition }; // Return key positions
