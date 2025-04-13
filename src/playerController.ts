@@ -25,6 +25,8 @@ export class PlayerController {
     private isFlying: boolean = false; // State for wing animation
     private flyTimer: number = 0;
     private flyDuration: number = 0.3; // How long the flap animation lasts
+    private airborneJumpCount: number = 0; // Counter for consecutive jumps in the air
+    private readonly maxAirborneJumps: number = 10; // Limit for airborne jumps
 
 
     // Camera control properties
@@ -238,16 +240,30 @@ export class PlayerController {
 
         // --- Jumping / Vertical Movement ---
         if (onGround) {
-            this.verticalVelocity = 0;
-            if (this.moveState.jump) {
-                this.verticalVelocity = this.jumpStrength;
-                this.moveState.jump = false; // Consume jump input only when successfully applied
-                this.isFlying = true; // Start wing flap animation on jump
-                this.flyTimer = this.flyDuration;
-            }
-        } else {
-            this.verticalVelocity += this.gravity * deltaTime;
+            this.airborneJumpCount = 0; // Reset jump counter when on ground
+            this.verticalVelocity = 0; // Reset vertical velocity only if truly grounded before jump check
         }
+
+        // Check for jump input
+        if (this.moveState.jump) {
+            // Allow jump if on ground OR if airborne jumps are below the limit
+            if (onGround || this.airborneJumpCount < this.maxAirborneJumps) {
+                this.verticalVelocity = this.jumpStrength; // Apply jump/flap force
+                this.isFlying = true; // Start wing flap animation
+                this.flyTimer = this.flyDuration;
+
+                if (!onGround) {
+                    this.airborneJumpCount++; // Increment counter only if jumping while airborne
+                }
+            }
+            this.moveState.jump = false; // Consume jump input regardless of success
+        }
+
+        // Apply gravity if not on ground or if vertical velocity is positive (moving up)
+        if (!onGround || this.verticalVelocity > 0) {
+             this.verticalVelocity += this.gravity * deltaTime;
+        }
+
         this.velocity.y = this.verticalVelocity;
 
         // --- Apply Movement ---
@@ -256,7 +272,11 @@ export class PlayerController {
         // --- Ground Collision ---
         if (this.playerObject.position.y < groundY) {
             this.playerObject.position.y = groundY;
-            this.verticalVelocity = 0;
+            // Don't reset vertical velocity here if a jump was just initiated
+            if (!this.isFlying) { // Only stop velocity if not actively flapping/jumping upwards
+                 this.verticalVelocity = 0;
+            }
+            this.airborneJumpCount = 0; // Ensure counter is reset on landing
         }
 
         // --- Wing Animation ---
