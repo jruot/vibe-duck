@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import * as THREE from 'three';
+// Removed duplicate import * as THREE from 'three';
 import { createGround } from './ground';
 import { createPond } from './pond';
 import { createRocks } from './rocks';
