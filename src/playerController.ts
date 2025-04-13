@@ -92,6 +92,8 @@ export class PlayerController {
         window.addEventListener('wheel', this.handleMouseWheel.bind(this), { passive: false }); // Use non-passive to allow preventDefault
         // Pointer Lock
         document.addEventListener('pointerlockchange', this.handlePointerLockChange.bind(this), false);
+        // Window Focus/Blur
+        window.addEventListener('blur', this.handleBlur.bind(this)); // Add blur listener
     }
 
     private handleKeyDown(event: KeyboardEvent) {
@@ -344,6 +346,7 @@ export class PlayerController {
         window.removeEventListener('mouseup', this.handleMouseUp);
         window.removeEventListener('mousemove', this.handleMouseMove);
         window.removeEventListener('wheel', this.handleMouseWheel); // Remove wheel listener
+        window.removeEventListener('blur', this.handleBlur); // Remove blur listener
         document.removeEventListener('pointerlockchange', this.handlePointerLockChange);
         // Ensure pointer lock is exited if the controller is disposed while active on the canvas
         if (document.pointerLockElement === this.canvas) {
