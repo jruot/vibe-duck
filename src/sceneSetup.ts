@@ -45,5 +45,6 @@ export function setupScene(canvasId: string) {
     scene.add(directionalLight);
     scene.add(directionalLight.target); // Target for the light direction
 
-    return { scene, camera, renderer };
+    // Return the canvas element along with scene, camera, and renderer
+    return { scene, camera, renderer, canvas };
 }
