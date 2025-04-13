@@ -152,7 +152,8 @@ export class PlayerController {
         // Only adjust camera if pointer is locked (implies left mouse is down)
         if (document.pointerLockElement === document.body) {
             this.cameraYaw -= event.movementX * this.mouseSensitivity;
-            this.cameraPitch -= event.movementY * this.mouseSensitivity;
+            // Invert vertical mouse look by adding movementY instead of subtracting
+            this.cameraPitch += event.movementY * this.mouseSensitivity;
             // Clamp pitch to avoid flipping over
             this.cameraPitch = Math.max(this.minPitch, Math.min(this.maxPitch, this.cameraPitch));
         }
@@ -180,8 +181,9 @@ export class PlayerController {
         const inputVector = new THREE.Vector3();
         if (this.moveState.forward) inputVector.add(flatCameraDirection);
         if (this.moveState.backward) inputVector.sub(flatCameraDirection);
-        if (this.moveState.strafeLeft) inputVector.sub(cameraRight); // Subtract right for left strafe
-        if (this.moveState.strafeRight) inputVector.add(cameraRight); // Add right for right strafe
+        // Swap strafe direction: Add right for left strafe, subtract for right strafe
+        if (this.moveState.strafeLeft) inputVector.add(cameraRight);
+        if (this.moveState.strafeRight) inputVector.sub(cameraRight);
 
         const isMoving = inputVector.lengthSq() > 0.01; // Check if there's movement input
 
