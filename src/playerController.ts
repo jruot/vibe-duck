@@ -1,35 +1,62 @@
 import * as THREE from 'three';
 
+// Interface for tracking movement states
+interface MoveState {
+    forward: boolean;
+    backward: boolean;
+    strafeLeft: boolean;
+    strafeRight: boolean;
+    jump: boolean;
+    mouseLeftDown: boolean; // Track left mouse button state
+}
+
 export class PlayerController {
     private playerObject: THREE.Object3D;
     private camera: THREE.PerspectiveCamera;
     private moveSpeed: number = 5.0; // Units per second
-    private turnSpeed: number = Math.PI; // Radians per second
+    // private turnSpeed: number = Math.PI; // Radians per second - Turning is now mouse/movement driven
     private velocity: THREE.Vector3 = new THREE.Vector3();
-    private rotationVelocity: number = 0;
+    // private rotationVelocity: number = 0; // Rotation is handled differently now
     private verticalVelocity: number = 0; // For jumping/flying
     private gravity: number = -9.8 * 2; // Adjusted gravity
     private jumpStrength: number = 6.0;
-    // private isJumping: boolean = false; // Removed as it was unused
+    // private isJumping: boolean = false; // Track jump state - Can rely on verticalVelocity
     private isFlying: boolean = false; // State for wing animation
     private flyTimer: number = 0;
     private flyDuration: number = 0.3; // How long the flap animation lasts
+
+
+    // Camera control properties
+    private cameraOffset: THREE.Vector3 = new THREE.Vector3(0, 3, 7); // Initial offset from player (behind, up)
+    private cameraTarget: THREE.Vector3 = new THREE.Vector3(); // Point camera looks at
+    private cameraYaw: number = 0; // Horizontal rotation around player (radians)
+    private cameraPitch: number = Math.PI / 8; // Vertical rotation (radians), slightly looking down
+    private minPitch: number = -Math.PI / 4; // Limit looking up
+    private maxPitch: number = Math.PI / 2 - 0.1; // Limit looking down
+    private mouseSensitivity: number = 0.002;
 
     // Add references to wings if needed for animation
     private wingLeft?: THREE.Object3D;
     private wingRight?: THREE.Object3D;
 
-    private moveState = {
-        forward: 0, // -1 for backward, 1 for forward
-        turn: 0,    // -1 for left, 1 for right
-        jump: false // Add jump state
+    private moveState: MoveState = {
+        forward: false,
+        backward: false,
+        strafeLeft: false,
+        strafeRight: false,
+        jump: false,
+        mouseLeftDown: false,
     };
 
-    private thirdPersonOffset = new THREE.Vector3(0, 4, -8); // Camera offset from player
+    // Target rotation for smooth turning
+    private targetQuaternion: THREE.Quaternion = new THREE.Quaternion();
+    private rotationSpeed: number = Math.PI * 2; // Radians per second for smoothing player rotation
 
     constructor(playerObject: THREE.Object3D, camera: THREE.PerspectiveCamera) {
         this.playerObject = playerObject;
         this.camera = camera;
+        // Initialize target quaternion to player's current rotation
+        this.targetQuaternion.copy(this.playerObject.quaternion);
         // Find wings for animation
         const body = this.playerObject.getObjectByName('body'); // Find body by name
         if (body) {
@@ -45,156 +72,222 @@ export class PlayerController {
     }
 
     private setupInputListeners() {
+        // Keyboard
         window.addEventListener('keydown', this.handleKeyDown.bind(this));
         window.addEventListener('keyup', this.handleKeyUp.bind(this));
+        // Mouse
+        window.addEventListener('mousedown', this.handleMouseDown.bind(this));
+        window.addEventListener('mouseup', this.handleMouseUp.bind(this));
+        window.addEventListener('mousemove', this.handleMouseMove.bind(this));
+        // Pointer Lock
+        document.addEventListener('pointerlockchange', this.handlePointerLockChange.bind(this), false);
     }
 
     private handleKeyDown(event: KeyboardEvent) {
         switch (event.code) {
-            case 'ArrowUp':
             case 'KeyW':
-                this.moveState.forward = 1;
+            case 'ArrowUp':
+                this.moveState.forward = true;
                 break;
-            case 'ArrowDown':
             case 'KeyS':
-                this.moveState.forward = -1;
+            case 'ArrowDown':
+                this.moveState.backward = true;
                 break;
-            case 'ArrowLeft':
             case 'KeyA':
-                this.moveState.turn = 1;
+            case 'ArrowLeft':
+                this.moveState.strafeLeft = true;
                 break;
-            case 'ArrowRight':
             case 'KeyD':
-                this.moveState.turn = -1;
+            case 'ArrowRight':
+                this.moveState.strafeRight = true;
                 break;
             case 'Space':
-                // Allow jump attempt even if already in air, but only trigger if on ground later
-                this.moveState.jump = true;
+                this.moveState.jump = true; // Set jump flag, handled in update
                 break;
         }
     }
 
     private handleKeyUp(event: KeyboardEvent) {
         switch (event.code) {
-            case 'ArrowUp':
             case 'KeyW':
-                if (this.moveState.forward > 0) this.moveState.forward = 0;
+            case 'ArrowUp':
+                this.moveState.forward = false;
                 break;
-            case 'ArrowDown':
             case 'KeyS':
-                 if (this.moveState.forward < 0) this.moveState.forward = 0;
+            case 'ArrowDown':
+                this.moveState.backward = false;
                 break;
-            case 'ArrowLeft':
             case 'KeyA':
-                 if (this.moveState.turn > 0) this.moveState.turn = 0;
+            case 'ArrowLeft':
+                this.moveState.strafeLeft = false;
                 break;
-            case 'ArrowRight':
             case 'KeyD':
-                // Ensure we only stop turning right if we *were* turning right
-                if (this.moveState.turn < 0) this.moveState.turn = 0;
+            case 'ArrowRight':
+                this.moveState.strafeRight = false;
                 break;
-             case 'Space':
-                this.moveState.jump = false; // Reset jump flag on key up
+            case 'Space':
+                // Jump is momentary, reset happens in update after applying force
+                // this.moveState.jump = false; // Don't reset here
                 break;
         }
     }
 
+    private handleMouseDown(event: MouseEvent) {
+        if (event.button === 0) { // Left mouse button
+            this.moveState.mouseLeftDown = true;
+            // Request pointer lock when left mouse is pressed
+            document.body.requestPointerLock();
+        }
+    }
+
+    private handleMouseUp(event: MouseEvent) {
+        if (event.button === 0) { // Left mouse button
+            this.moveState.mouseLeftDown = false;
+            // Exit pointer lock when left mouse is released
+            document.exitPointerLock();
+        }
+    }
+
+    private handleMouseMove(event: MouseEvent) {
+        // Only adjust camera if pointer is locked (implies left mouse is down)
+        if (document.pointerLockElement === document.body) {
+            this.cameraYaw -= event.movementX * this.mouseSensitivity;
+            this.cameraPitch -= event.movementY * this.mouseSensitivity;
+            // Clamp pitch to avoid flipping over
+            this.cameraPitch = Math.max(this.minPitch, Math.min(this.maxPitch, this.cameraPitch));
+        }
+    }
+
+     private handlePointerLockChange() {
+        if (document.pointerLockElement !== document.body) {
+            // If pointer lock is lost unexpectedly (e.g., pressing Esc), ensure mouse state is updated
+            this.moveState.mouseLeftDown = false;
+        }
+    }
+
+
     public update(deltaTime: number) {
         const groundY = 0.5; // Define ground level Y
-        const onGround = this.playerObject.position.y <= groundY + 0.01; // Check if player is on the ground (add small tolerance)
+        const onGround = this.playerObject.position.y <= groundY + 0.01; // Check if player is on the ground
+
+        // --- Calculate Input Direction (Relative to Camera) ---
+        const cameraDirection = new THREE.Vector3();
+        this.camera.getWorldDirection(cameraDirection);
+        const flatCameraDirection = new THREE.Vector3(cameraDirection.x, 0, cameraDirection.z).normalize();
+        // Calculate right vector based on flat camera direction and world up vector
+        const cameraRight = new THREE.Vector3().crossVectors(new THREE.Vector3(0, 1, 0), flatCameraDirection).normalize();
+
+        const inputVector = new THREE.Vector3();
+        if (this.moveState.forward) inputVector.add(flatCameraDirection);
+        if (this.moveState.backward) inputVector.sub(flatCameraDirection);
+        if (this.moveState.strafeLeft) inputVector.sub(cameraRight); // Subtract right for left strafe
+        if (this.moveState.strafeRight) inputVector.add(cameraRight); // Add right for right strafe
+
+        const isMoving = inputVector.lengthSq() > 0.01; // Check if there's movement input
+
+        // --- Player Rotation ---
+        if (isMoving && (this.moveState.forward || this.moveState.backward)) {
+            // Only rotate player model if moving forward/backward (W/S keys)
+            // Calculate target rotation based only on forward/backward component relative to camera
+            const forwardMovementDirection = new THREE.Vector3();
+            if (this.moveState.forward) forwardMovementDirection.add(flatCameraDirection);
+            if (this.moveState.backward) forwardMovementDirection.sub(flatCameraDirection);
+
+            if (forwardMovementDirection.lengthSq() > 0.01) {
+                 // Calculate angle towards movement direction in the XZ plane
+                const targetAngle = Math.atan2(forwardMovementDirection.x, forwardMovementDirection.z);
+                this.targetQuaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), targetAngle);
+            }
+        }
+        // Smoothly rotate player towards target rotation
+        this.playerObject.quaternion.rotateTowards(this.targetQuaternion, this.rotationSpeed * deltaTime);
+
+
+        // --- Velocity Calculation ---
+        if (isMoving) {
+            inputVector.normalize(); // Ensure consistent speed regardless of diagonal movement
+            this.velocity.x = inputVector.x * this.moveSpeed;
+            this.velocity.z = inputVector.z * this.moveSpeed;
+        } else {
+            // Apply damping/friction if desired, or just stop
+            this.velocity.x = 0;
+            this.velocity.z = 0;
+        }
 
         // --- Jumping / Vertical Movement ---
         if (onGround) {
-            this.verticalVelocity = 0; // Reset vertical velocity when on ground
-            // this.isJumping = false; // Removed
+            this.verticalVelocity = 0;
             if (this.moveState.jump) {
-                this.verticalVelocity = this.jumpStrength; // Apply jump force
-                // this.isJumping = true; // Removed
-                this.isFlying = true; // Start wing flap animation
+                this.verticalVelocity = this.jumpStrength;
+                this.moveState.jump = false; // Consume jump input only when successfully applied
+                this.isFlying = true; // Start wing flap animation on jump
                 this.flyTimer = this.flyDuration;
-                // this.moveState.jump = false; // Consume jump input immediately? Or on keyup? Keyup is better.
             }
         } else {
-            // Apply gravity
             this.verticalVelocity += this.gravity * deltaTime;
         }
+        this.velocity.y = this.verticalVelocity;
 
-        // Apply vertical movement
-        this.playerObject.position.y += this.verticalVelocity * deltaTime;
-
-        // Prevent falling through the floor
-        if (this.playerObject.position.y < groundY) {
-            this.playerObject.position.y = groundY;
-            this.verticalVelocity = 0; // Stop falling
-            // this.isJumping = false; // Removed
-        }
-
-
-        // --- Rotation ---
-        this.rotationVelocity = this.moveState.turn * this.turnSpeed;
-        this.playerObject.rotateY(this.rotationVelocity * deltaTime);
-
-        // --- Planar Movement ---
-        const forwardDirection = new THREE.Vector3();
-        this.playerObject.getWorldDirection(forwardDirection);
-        // Use only X and Z for planar movement, normalize to prevent faster diagonal speed
-        forwardDirection.y = 0;
-        forwardDirection.normalize();
-
-        this.velocity.copy(forwardDirection).multiplyScalar(this.moveState.forward * this.moveSpeed);
-
-        // Apply planar movement
+        // --- Apply Movement ---
         this.playerObject.position.add(this.velocity.clone().multiplyScalar(deltaTime));
 
+        // --- Ground Collision ---
+        if (this.playerObject.position.y < groundY) {
+            this.playerObject.position.y = groundY;
+            this.verticalVelocity = 0;
+        }
 
         // --- Wing Animation ---
+        // Continue flapping if the timer is active (from jump)
         if (this.isFlying) {
-            this.flyTimer -= deltaTime;
-            // Simple flap up/down based on sine wave mapped to duration
-            const flapProgress = (this.flyDuration - this.flyTimer) / this.flyDuration;
-            const flapAngle = Math.sin(flapProgress * Math.PI) * (Math.PI / 3); // Angle of flap (adjust amplitude)
+             this.flyTimer -= deltaTime;
+             const flapProgress = (this.flyDuration - this.flyTimer) / this.flyDuration;
+             const flapAngle = Math.sin(flapProgress * Math.PI) * (Math.PI / 3); // Angle of flap
+             const flapAxis = 'x'; // Flap around local X axis
+             if (this.wingLeft) this.wingLeft.rotation[flapAxis] = flapAngle;
+             if (this.wingRight) this.wingRight.rotation[flapAxis] = flapAngle;
 
-            // Determine the correct axis for flapping based on the new wing orientation.
-            // Wings are now horizontal (rotated +/-PI/2 on Z).
-            // Flapping up/down should correspond to rotation around the wing's local X-axis
-            // (the axis pointing from the body outwards along the wing's attachment).
-            const flapAxis = 'x'; // Changed from 'y'
-
-            // The base rotation on the new flapAxis (X) is 0.
-            // We directly set the rotation on the flap axis.
-            // Positive flapAngle should lift the wing tip up.
-            if (this.wingLeft) this.wingLeft.rotation[flapAxis] = flapAngle;
-            if (this.wingRight) this.wingRight.rotation[flapAxis] = flapAngle; // Both wings flap the same way relative to their local X
-
-
-            if (this.flyTimer <= 0) {
-                this.isFlying = false;
-                 // Reset wing position smoothly? Or snap back? Snap for now.
-                 // Ensure we reset the correct axis back to its base angle.
-                const resetAxis = 'x'; // Should match flapAxis
-                const baseAngle = 0; // Base X rotation is 0
-                if (this.wingLeft) this.wingLeft.rotation[resetAxis] = baseAngle; // Reset to base angle
-                if (this.wingRight) this.wingRight.rotation[resetAxis] = baseAngle; // Reset to base angle
-            }
+             if (this.flyTimer <= 0) {
+                 this.isFlying = false;
+                 // Reset wings
+                 const resetAxis = 'x';
+                 const baseAngle = 0;
+                 if (this.wingLeft) this.wingLeft.rotation[resetAxis] = baseAngle;
+                 if (this.wingRight) this.wingRight.rotation[resetAxis] = baseAngle;
+             }
         }
 
 
-        // --- Camera Update (Third-Person) ---
-        // Calculate desired camera position based on player's rotation and offset
-        const cameraOffsetRotated = this.thirdPersonOffset.clone().applyQuaternion(this.playerObject.quaternion);
+        // --- Camera Update ---
+        // Calculate desired camera position based on yaw, pitch, and offset
+        const cameraOffsetRotated = this.cameraOffset.clone();
+        const spherical = new THREE.Spherical().setFromVector3(cameraOffsetRotated);
+        spherical.theta = this.cameraYaw; // Horizontal angle based on mouse movement
+        spherical.phi = Math.PI / 2 - this.cameraPitch; // Vertical angle based on mouse movement
+        spherical.makeSafe(); // Ensure phi is within valid range
+        cameraOffsetRotated.setFromSpherical(spherical);
+
         const desiredCameraPosition = this.playerObject.position.clone().add(cameraOffsetRotated);
 
-        // Smoothly interpolate camera position (lerp)
-        this.camera.position.lerp(desiredCameraPosition, 0.1); // Adjust lerp factor for smoothness
+        // Set camera position (can add smoothing later if needed)
+        this.camera.position.copy(desiredCameraPosition);
 
-        // Make camera look at the player's approximate head position
-        const lookAtPosition = this.playerObject.position.clone().add(new THREE.Vector3(0, 1.0, 0)); // Look slightly above the base
-        this.camera.lookAt(lookAtPosition);
+        // Set camera target (look at player's head area)
+        this.cameraTarget.copy(this.playerObject.position).add(new THREE.Vector3(0, 1.0, 0)); // Look slightly above base
+        this.camera.lookAt(this.cameraTarget);
     }
 
     // Cleanup listeners if the controller is destroyed
     public dispose() {
         window.removeEventListener('keydown', this.handleKeyDown);
         window.removeEventListener('keyup', this.handleKeyUp);
+        window.removeEventListener('mousedown', this.handleMouseDown);
+        window.removeEventListener('mouseup', this.handleMouseUp);
+        window.removeEventListener('mousemove', this.handleMouseMove);
+        document.removeEventListener('pointerlockchange', this.handlePointerLockChange);
+        // Ensure pointer lock is exited if the controller is disposed while active
+        if (document.pointerLockElement === document.body) {
+            document.exitPointerLock();
+        }
     }
 }
