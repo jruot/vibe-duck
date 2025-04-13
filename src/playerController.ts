@@ -133,17 +133,19 @@ export class PlayerController {
     }
 
     private handleMouseDown(event: MouseEvent) {
-        if (event.button === 0) { // Left mouse button
-            this.moveState.mouseLeftDown = true;
-            // Request pointer lock when left mouse is pressed
+        // Use right mouse button (button index 2) for camera control/pointer lock
+        if (event.button === 2) {
+            this.moveState.mouseLeftDown = true; // Keep using this state variable name for simplicity
+            // Request pointer lock when right mouse is pressed
             document.body.requestPointerLock();
         }
     }
 
     private handleMouseUp(event: MouseEvent) {
-        if (event.button === 0) { // Left mouse button
-            this.moveState.mouseLeftDown = false;
-            // Exit pointer lock when left mouse is released
+        // Use right mouse button (button index 2)
+        if (event.button === 2) {
+            this.moveState.mouseLeftDown = false; // Keep using this state variable name
+            // Exit pointer lock when right mouse is released
             document.exitPointerLock();
         }
     }
@@ -161,7 +163,8 @@ export class PlayerController {
 
      private handlePointerLockChange() {
         if (document.pointerLockElement !== document.body) {
-            // If pointer lock is lost unexpectedly (e.g., pressing Esc), ensure mouse state is updated
+            // If pointer lock is lost unexpectedly (e.g., pressing Esc or releasing right button),
+            // ensure mouse state is updated.
             this.moveState.mouseLeftDown = false;
         }
     }
