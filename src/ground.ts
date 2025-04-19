@@ -10,7 +10,7 @@ import * as THREE from 'three';
 const groundWidth = 200;
 const groundDepth = 200;
 const groundSegments = 50; // Increase segments for detail
-const maxHeightVariation = 0.5; // Maximum random height offset
+const maxHeightVariation = 0.2; // Maximum random height offset (Reduced from 0.5)
 
 export function createGround(scene: THREE.Scene): THREE.Mesh {
     const groundGeometry = new THREE.PlaneGeometry(
