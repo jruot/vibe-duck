@@ -27,21 +27,24 @@ export function createGround(
 
     // --- Apply Slight Random Height Variation, excluding pond area ---
     const vertices = groundGeometry.attributes.position;
-    const pondCenterXZ = new THREE.Vector2(pondPosition.x, pondPosition.z); // Pond center in plane's coordinates
+    const pondCenterXZ = new THREE.Vector2(pondPosition.x, pondPosition.z); // Pond center in plane's local X/Y coordinates
+    const basePlaneZ = -pondPosition.y; // Target Z for vertices under the pond (becomes world Y after rotation)
 
     for (let i = 0; i < vertices.count; i++) {
         const x = vertices.getX(i);
-        const y = vertices.getY(i); // Corresponds to depth (Z) before rotation
+        const y = vertices.getY(i); // Corresponds to depth (local Y) before rotation
         const vertexPosXZ = new THREE.Vector2(x, y);
 
         // Check if the vertex is outside the pond radius (+ margin)
         if (vertexPosXZ.distanceTo(pondCenterXZ) > pondRadius + pondFlatteningMargin) {
-            // The Z coordinate of the plane becomes the Y coordinate (height) after rotation
-            const currentZ = vertices.getZ(i); // Should be 0 for a flat plane initially
-            const randomOffset = (Math.random() - 0.5) * maxHeightVariation; // Random value between -maxHeight/2 and +maxHeight/2
-            vertices.setZ(i, currentZ + randomOffset);
+            // Apply random offset relative to the base height
+            const randomOffset = (Math.random() - 0.5) * maxHeightVariation;
+            // Set the Z coordinate (which becomes world -Y after rotation)
+            vertices.setZ(i, basePlaneZ + randomOffset);
+        } else {
+            // Vertex is inside the pond area, set its Z coordinate to match the pond's base height
+            vertices.setZ(i, basePlaneZ);
         }
-        // Else: Vertex is inside the pond area, leave its Z coordinate at 0 (flat)
     }
     groundGeometry.computeVertexNormals(); // Recalculate normals for correct lighting
 
