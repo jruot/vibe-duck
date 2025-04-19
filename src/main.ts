@@ -15,9 +15,9 @@ const gameState = new GameState();
 
 // World Elements
 // createWorld now returns instances of Nest and Pond
-const { nest, pond } = createWorld(scene);
+const { nest, _pond } = createWorld(scene); // Prefix unused 'pond' with _
 const nestPosition = nest.position; // Get position from the Nest instance
-// const pondPosition = pond.position; // Get pond position if needed elsewhere
+// const pondPosition = _pond.position; // Get pond position if needed elsewhere (using _pond)
 
 // Ducks
 const fatherDuck = createFatherDuck();

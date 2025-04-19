@@ -45,10 +45,12 @@ export class Rock extends GameObject {
 
 
 /**
- * Creates and adds Rock instances to the scene, avoiding a specified circular area (pond).
+ * Creates and adds Rock instances to the scene, avoiding specified circular areas (pond, nest).
  * @param scene The THREE.Scene to add rocks to.
- * @param pondPosition The center position of the area to avoid.
- * @param pondRadius The radius of the area to avoid.
+ * @param pondPosition The center position of the pond area to avoid.
+ * @param pondRadius The radius of the pond area to avoid.
+ * @param nestPosition The center position of the nest area to avoid.
+ * @param nestRadius The approximate radius of the nest area to avoid.
  * @param count The approximate number of rocks to create.
  * @param areaWidth The width of the area to scatter rocks within.
  * @param areaDepth The depth of the area to scatter rocks within.
@@ -57,6 +59,8 @@ export function createRocks(
     scene: THREE.Scene,
     pondPosition: THREE.Vector3,
     pondRadius: number,
+    nestPosition: THREE.Vector3, // Add nest position parameter
+    nestRadius: number,     // Add nest radius parameter
     count: number = 20,
     areaWidth: number = 200,
     areaDepth: number = 200
@@ -80,15 +84,24 @@ export function createRocks(
 
         // Avoid placing rocks in the pond
         // Calculate distance in the XZ plane only
-        const distanceToPondCenter = new THREE.Vector2(potentialPosition.x, potentialPosition.z)
-            .distanceTo(new THREE.Vector2(pondPosition.x, pondPosition.z));
+        const potentialPosXZ = new THREE.Vector2(potentialPosition.x, potentialPosition.z);
 
-        if (distanceToPondCenter > pondRadius + rockRadius) { // Check distance against pond radius + rock radius
+        // Avoid placing rocks in the pond
+        const distanceToPondCenter = potentialPosXZ.distanceTo(new THREE.Vector2(pondPosition.x, pondPosition.z));
+
+        // Avoid placing rocks near the nest
+        const distanceToNestCenter = potentialPosXZ.distanceTo(new THREE.Vector2(nestPosition.x, nestPosition.z));
+
+
+        // Check distances against exclusion zones (pond, nest) + rock radius
+        if (distanceToPondCenter > pondRadius + rockRadius &&
+            distanceToNestCenter > nestRadius + rockRadius)
+        {
              // If position is valid, create and add the Rock instance
              new Rock(scene, potentialPosition, rockSize, potentialRotation); // Constructor handles adding to scene
              placedRocks++;
         }
-        // If inside pond, don't instantiate and try again.
+        // If inside an exclusion zone, don't instantiate and try again.
     }
 
     if (attempts >= maxAttempts) {
