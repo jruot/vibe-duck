@@ -14,7 +14,10 @@ const { scene, camera, renderer, canvas } = setupScene('game-canvas');
 const gameState = new GameState();
 
 // World Elements
-const { nestPosition } = createWorld(scene);
+// createWorld now returns instances of Nest and Pond
+const { nest, pond } = createWorld(scene);
+const nestPosition = nest.position; // Get position from the Nest instance
+// const pondPosition = pond.position; // Get pond position if needed elsewhere
 
 // Ducks
 const fatherDuck = createFatherDuck();
@@ -22,8 +25,9 @@ fatherDuck.position.set(0, 0.5, 5); // Initial position
 scene.add(fatherDuck);
 
 const motherDuck = createMotherDuck();
+// Position mother duck relative to the nest instance's position
 motherDuck.position.copy(nestPosition);
-motherDuck.position.y = 0.5; // Adjust height based on nest
+motherDuck.position.y = 0.5; // Adjust height relative to ground/nest top
 scene.add(motherDuck);
 
 // --- Baby Duckling Setup ---

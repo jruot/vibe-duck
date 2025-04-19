@@ -7,10 +7,45 @@ import * as THREE from 'three';
 const rockMaterial = new THREE.MeshStandardMaterial({
     color: 0x808080, // Grey
     // map: rockTexture, // TODO: Uncomment when texture is ready
+    roughness: 0.8,
+    metalness: 0.1,
 });
 
+// --- Rock Class ---
+import { GameObject } from './gameObject'; // Import base class
+
+export class Rock extends GameObject {
+    public size: number;
+    public boundingRadius: number;
+
+    constructor(scene: THREE.Scene, position: THREE.Vector3, size: number, rotation: THREE.Euler) {
+        // Create the model directly within the constructor
+        const geometry = new THREE.DodecahedronGeometry(size / 2, 0); // Use size as diameter, radius is size/2
+        const model = new THREE.Mesh(geometry, rockMaterial);
+        model.name = "RockMesh";
+        model.castShadow = true;
+        model.receiveShadow = true;
+
+        super(model); // Initialize GameObject
+
+        this.size = size;
+        this.boundingRadius = size / 2; // Radius for placement checks
+
+        // Set position, rotation, and add to scene
+        this.setPosition(position.x, position.y, position.z);
+        this.object3D.rotation.copy(rotation);
+        scene.add(this.object3D);
+    }
+
+    // public dispose(scene: THREE.Scene): void {
+    //     // Add specific disposal logic if necessary
+    //     super.dispose(scene);
+    // }
+}
+
+
 /**
- * Creates and adds rocks to the scene, avoiding a specified circular area (pond).
+ * Creates and adds Rock instances to the scene, avoiding a specified circular area (pond).
  * @param scene The THREE.Scene to add rocks to.
  * @param pondPosition The center position of the area to avoid.
  * @param pondRadius The radius of the area to avoid.
@@ -32,30 +67,28 @@ export function createRocks(
 
     while (placedRocks < count && attempts < maxAttempts) {
         attempts++;
-        const rockSize = Math.random() * 2 + 1; // Random size between 1 and 3
-        const rockGeometry = new THREE.DodecahedronGeometry(rockSize, 0); // Simple poly shape
-        const rock = new THREE.Mesh(rockGeometry, rockMaterial);
+        const rockSize = Math.random() * 2 + 1; // Random size between 1 and 3 (diameter)
+        const rockRadius = rockSize / 2;
 
         // Calculate random position within the specified area
-        const x = (Math.random() - 0.5) * (areaWidth - rockSize); // Adjust for rock size to stay within bounds
+        const x = (Math.random() - 0.5) * (areaWidth - rockSize); // Adjust for rock diameter
         const z = (Math.random() - 0.5) * (areaDepth - rockSize);
-        const y = rockSize / 2; // Sit on the ground (assuming ground is at Y=0)
-        rock.position.set(x, y, z);
+        const y = rockRadius; // Sit on the ground (center is at radius height)
+        const potentialPosition = new THREE.Vector3(x, y, z);
+        const potentialRotation = new THREE.Euler(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
 
-        rock.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
-        rock.castShadow = true;
-        rock.receiveShadow = true;
 
         // Avoid placing rocks in the pond
-        // Calculate distance in the XZ plane only, since pond is flat
-        const distanceToPondCenter = new THREE.Vector2(rock.position.x, rock.position.z)
+        // Calculate distance in the XZ plane only
+        const distanceToPondCenter = new THREE.Vector2(potentialPosition.x, potentialPosition.z)
             .distanceTo(new THREE.Vector2(pondPosition.x, pondPosition.z));
 
-        if (distanceToPondCenter > pondRadius + rockSize / 2) { // Check distance against pond radius + rock radius
-             scene.add(rock);
+        if (distanceToPondCenter > pondRadius + rockRadius) { // Check distance against pond radius + rock radius
+             // If position is valid, create and add the Rock instance
+             new Rock(scene, potentialPosition, rockSize, potentialRotation); // Constructor handles adding to scene
              placedRocks++;
         }
-        // If inside pond, simply don't add it and try again in the next loop iteration.
+        // If inside pond, don't instantiate and try again.
     }
 
     if (attempts >= maxAttempts) {

@@ -9,11 +9,13 @@ const bushMaterial = new THREE.MeshStandardMaterial({
 
 /**
  * Creates a single bush model composed of several spheres.
+ * Creates the 3D model (THREE.Group) for a bush composed of several spheres.
  * @param scale The overall scale of the bush.
- * @returns A THREE.Group representing the bush.
+ * @returns A THREE.Group representing the bush model.
  */
-function createBush(scale: number = 1.0): THREE.Group {
+function createBushModel(scale: number = 1.0): THREE.Group {
     const bush = new THREE.Group();
+    bush.name = "BushGroup";
     const numSpheres = Math.floor(Math.random() * 3) + 4; // 4 to 6 spheres per bush
     const baseRadius = 0.5 * scale;
 
@@ -45,6 +47,32 @@ function createBush(scale: number = 1.0): THREE.Group {
     return bush;
 }
 
+// --- Bush Class ---
+import { GameObject } from './gameObject'; // Import base class
+
+export class Bush extends GameObject {
+    public scale: number;
+    public boundingRadius: number;
+
+    constructor(scene: THREE.Scene, position: THREE.Vector3, scale: number = 1.0) {
+        const model = createBushModel(scale);
+        super(model); // Initialize GameObject with the model
+
+        this.scale = scale;
+        // Retrieve bounding radius calculated in createBushModel
+        this.boundingRadius = (model.userData as any).boundingRadius || 0.5 * scale * 1.2; // Fallback
+
+        // Set position and add to scene
+        this.setPosition(position.x, position.y, position.z);
+        scene.add(this.object3D);
+    }
+
+    // public dispose(scene: THREE.Scene): void {
+    //     // Add specific disposal logic if necessary
+    //     super.dispose(scene);
+    // }
+}
+
 
 /**
  * Creates and adds bushes to the scene, avoiding specified areas.
@@ -74,32 +102,33 @@ export function createBushes(
     while (placedBushes < count && attempts < maxAttempts) {
         attempts++;
         const bushScale = Math.random() * 0.6 + 0.7; // Random scale between 0.7 and 1.3
-        const bush = createBush(bushScale);
-        const bushBoundingRadius = (bush.userData as any).boundingRadius || bushScale * 0.6; // Use calculated or estimated radius
+        // Estimate bounding radius based on scale for position calculation
+        const estimatedRadius = 0.5 * bushScale * 1.2;
 
         // Calculate random position within the specified area
-        const x = (Math.random() - 0.5) * (areaWidth - bushBoundingRadius * 2);
-        const z = (Math.random() - 0.5) * (areaDepth - bushBoundingRadius * 2);
+        const x = (Math.random() - 0.5) * (areaWidth - estimatedRadius * 2);
+        const z = (Math.random() - 0.5) * (areaDepth - estimatedRadius * 2);
         const y = 0; // Base of the bush sits near the ground
-        bush.position.set(x, y, z);
+        const potentialPosition = new THREE.Vector3(x, y, z);
 
         // --- Avoid placing bushes in the pond ---
-        const distanceToPondCenterXZ = new THREE.Vector2(bush.position.x, bush.position.z)
+        const distanceToPondCenterXZ = new THREE.Vector2(potentialPosition.x, potentialPosition.z)
             .distanceTo(new THREE.Vector2(pondPosition.x, pondPosition.z));
 
         // --- Avoid placing bushes too close to the nest ---
-         const distanceToNestCenterXZ = new THREE.Vector2(bush.position.x, bush.position.z)
+         const distanceToNestCenterXZ = new THREE.Vector2(potentialPosition.x, potentialPosition.z)
             .distanceTo(new THREE.Vector2(nestPosition.x, nestPosition.z));
 
 
-        // Check distances against exclusion zones (pond, nest) + bush radius
-        if (distanceToPondCenterXZ > pondRadius + bushBoundingRadius &&
-            distanceToNestCenterXZ > nestRadius + bushBoundingRadius)
+        // Check distances against exclusion zones (pond, nest) + estimated bush radius
+        if (distanceToPondCenterXZ > pondRadius + estimatedRadius &&
+            distanceToNestCenterXZ > nestRadius + estimatedRadius)
         {
-             scene.add(bush);
+             // If position is valid, create and add the Bush instance
+             new Bush(scene, potentialPosition, bushScale); // Constructor handles adding to scene
              placedBushes++;
         }
-        // If inside an exclusion zone, don't add it and try again.
+        // If inside an exclusion zone, don't instantiate and try again.
     }
 
     if (attempts >= maxAttempts) {
