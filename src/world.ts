@@ -1,16 +1,17 @@
 import * as THREE from 'three';
 import { createGround } from './ground';
 import { createPond, Pond } from './pond'; // Import class
-import { createRocks } from './rocks'; // Keep placement function
+import { createRocks, Rock } from './rocks'; // Import Rock class
 import { createNest, Nest } from './nest'; // Import class
-import { createTrees } from './tree'; // Keep placement function
-import { createBushes } from './bush'; // Keep placement function
+import { createTrees, Tree } from './tree'; // Import Tree class
+import { createBushes, Bush } from './bush'; // Import Bush class
+import { GameObject } from './gameObject'; // Import base class for collidables list
 
 // Interface for the returned world data
 export interface WorldData {
     nest: Nest; // Return the Nest instance
     pond: Pond; // Return the Pond instance
-    // Add other relevant data here if needed, e.g., ground mesh
+    collidables: GameObject[]; // List of objects for collision checks
 }
 
 export function createWorld(scene: THREE.Scene): WorldData {
