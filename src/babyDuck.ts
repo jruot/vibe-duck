@@ -142,7 +142,7 @@ export class BabyDuck extends GameObject {
         }
     }
 
-    private updateReturning(deltaTime: number, speed: number): void {
+    private updateReturning(_deltaTime: number, speed: number): void {
         // Move towards the center of the nest
         const directionToNest = this.targetPosition.clone().sub(this.position); // Target position is nest center
         directionToNest.y = 0; // Stay on ground level
