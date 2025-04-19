@@ -39,17 +39,20 @@ export function createWorld(scene: THREE.Scene): WorldData {
     const nestPosition = nest.position; // Get position from the instance
     const nestRadius = nest.boundingRadius; // Get bounding radius from the instance
 
+    // Create static collidable objects and collect them
+    const rocks: Rock[] = createRocks(scene, pondPosition, pondRadius, nestPosition, nestRadius, 30, groundWidth, groundHeight);
+    const trees: Tree[] = createTrees(scene, pondPosition, pondRadius, nestPosition, nestRadius, 25, groundWidth, groundHeight);
+    const bushes: Bush[] = createBushes(scene, pondPosition, pondRadius, nestPosition, nestRadius, 40, groundWidth, groundHeight);
 
-    // Rocks - Scatter Rock instances, avoiding pond and nest
-    createRocks(scene, pondPosition, pondRadius, nestPosition, nestRadius, 30, groundWidth, groundHeight);
+    // Combine all collidable objects into one list
+    // Filter just in case, though constructors should set isCollidable=true
+    const collidables: GameObject[] = [
+        ...rocks.filter(r => r.isCollidable),
+        ...trees.filter(t => t.isCollidable),
+        ...bushes.filter(b => b.isCollidable)
+    ];
 
-    // Trees - Scatter Tree instances, avoiding pond and nest
-    createTrees(scene, pondPosition, pondRadius, nestPosition, nestRadius, 25, groundWidth, groundHeight);
 
-    // Bushes - Scatter Bush instances, avoiding pond and nest
-    createBushes(scene, pondPosition, pondRadius, nestPosition, nestRadius, 40, groundWidth, groundHeight);
-
-
-    // Return the created Nest and Pond instances along with other data if needed
-    return { nest, pond };
+    // Return the created Nest, Pond, and the list of collidables
+    return { nest, pond, collidables };
 }

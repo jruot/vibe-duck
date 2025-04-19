@@ -30,6 +30,7 @@ export class Rock extends GameObject {
 
         this.size = size;
         this.boundingRadius = size / 2; // Radius for placement checks
+        this.isCollidable = true; // Mark this object type as collidable
 
         // Set position, rotation, and add to scene
         this.setPosition(position.x, position.y, position.z);
@@ -64,7 +65,8 @@ export function createRocks(
     count: number = 20,
     areaWidth: number = 200,
     areaDepth: number = 200
-): void {
+): Rock[] { // Return an array of created Rock instances
+    const rocks: Rock[] = []; // Array to hold created rocks
     let placedRocks = 0;
     let attempts = 0;
     const maxAttempts = count * 3; // Limit attempts to prevent infinite loops
@@ -97,8 +99,9 @@ export function createRocks(
         if (distanceToPondCenter > pondRadius + rockRadius &&
             distanceToNestCenter > nestRadius + rockRadius)
         {
-             // If position is valid, create and add the Rock instance
-             new Rock(scene, potentialPosition, rockSize, potentialRotation); // Constructor handles adding to scene
+             // If position is valid, create the Rock instance
+             const rock = new Rock(scene, potentialPosition, rockSize, potentialRotation); // Constructor handles adding to scene
+             rocks.push(rock); // Add to the list
              placedRocks++;
         }
         // If inside an exclusion zone, don't instantiate and try again.
@@ -107,4 +110,5 @@ export function createRocks(
     if (attempts >= maxAttempts) {
         console.warn(`createRocks: Reached max attempts (${maxAttempts}) trying to place ${count} rocks. Placed ${placedRocks}.`);
     }
+    return rocks; // Return the list of created rocks
 }

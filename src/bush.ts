@@ -59,8 +59,9 @@ export class Bush extends GameObject {
         super(model); // Initialize GameObject with the model
 
         this.scale = scale;
-        // Retrieve bounding radius calculated in createBushModel
+        // Use the estimated bounding radius from createBushModel userData
         this.boundingRadius = (model.userData as any).boundingRadius || 0.5 * scale * 1.2; // Fallback
+        this.isCollidable = true; // Mark this object type as collidable
 
         // Set position and add to scene
         this.setPosition(position.x, position.y, position.z);
@@ -94,7 +95,8 @@ export function createBushes(
     count: number = 30,
     areaWidth: number = 200,
     areaDepth: number = 200
-): void {
+): Bush[] { // Return an array of created Bush instances
+    const bushes: Bush[] = []; // Array to hold created bushes
     let placedBushes = 0;
     let attempts = 0;
     const maxAttempts = count * 5; // Limit attempts
@@ -124,8 +126,9 @@ export function createBushes(
         if (distanceToPondCenterXZ > pondRadius + estimatedRadius &&
             distanceToNestCenterXZ > nestRadius + estimatedRadius)
         {
-             // If position is valid, create and add the Bush instance
-             new Bush(scene, potentialPosition, bushScale); // Constructor handles adding to scene
+             // If position is valid, create the Bush instance
+             const bush = new Bush(scene, potentialPosition, bushScale); // Constructor handles adding to scene
+             bushes.push(bush); // Add to the list
              placedBushes++;
         }
         // If inside an exclusion zone, don't instantiate and try again.
@@ -134,4 +137,5 @@ export function createBushes(
     if (attempts >= maxAttempts) {
         console.warn(`createBushes: Reached max attempts (${maxAttempts}) trying to place ${count} bushes. Placed ${placedBushes}.`);
     }
+    return bushes; // Return the list of created bushes
 }

@@ -31,6 +31,8 @@ export class BabyDuck extends GameObject {
     private nestPosition: THREE.Vector3;
     private gameState: GameState;
     private motherDuck: THREE.Object3D; // Added for looking at mother when safe
+    private collidables: GameObject[]; // List of objects to collide with
+    private ducklingRadius: number = 0.2; // Approximate radius for duckling collision
 
     constructor(
         scene: THREE.Scene,
@@ -38,7 +40,8 @@ export class BabyDuck extends GameObject {
         fatherDuck: THREE.Object3D,
         motherDuck: THREE.Object3D, // Pass mother duck reference
         nestPosition: THREE.Vector3,
-        gameState: GameState
+        gameState: GameState,
+        collidables: GameObject[] // Accept collidables list
     ) {
         const model = createBabyDuckModel(); // Create the visual model
         super(model); // Initialize base GameObject with the model
@@ -49,6 +52,7 @@ export class BabyDuck extends GameObject {
         this.motherDuck = motherDuck;
         this.nestPosition = nestPosition;
         this.gameState = gameState;
+        this.collidables = collidables; // Store collidables list
 
         // Initialize state and properties
         this.state = 'idle';
@@ -97,7 +101,13 @@ export class BabyDuck extends GameObject {
             direction.y = 0; // Keep movement planar
             if (direction.lengthSq() > 0.01) { // Only move if not already close
                 direction.normalize();
-                this.position.add(direction.clone().multiplyScalar(speed * 0.6)); // Move slower when idle
+                const moveVector = direction.clone().multiplyScalar(speed * 0.6);
+                if (this.canMove(moveVector)) {
+                    this.position.add(moveVector);
+                } else {
+                    // Collision detected, maybe try a new target sooner?
+                    this.setNewIdleTarget(); // Force choosing a new direction
+                }
                 this.rotateTowards(direction);
             }
         }
@@ -135,7 +145,11 @@ export class BabyDuck extends GameObject {
 
             if (distance > DUCKLING_FOLLOW_DISTANCE) {
                 directionToTarget.normalize();
-                this.position.add(directionToTarget.clone().multiplyScalar(speed * DUCKLING_FOLLOW_SPEED_FACTOR));
+                const moveVector = directionToTarget.clone().multiplyScalar(speed * DUCKLING_FOLLOW_SPEED_FACTOR);
+                if (this.canMove(moveVector)) {
+                    this.position.add(moveVector);
+                }
+                // If collision, duckling just stops moving towards target this frame
                 this.rotateTowards(directionToTarget);
             }
             // Optional: Add slight random offset or flocking behavior later
@@ -151,7 +165,11 @@ export class BabyDuck extends GameObject {
             this.setSafe();
         } else {
             directionToNest.normalize();
-            this.position.add(directionToNest.clone().multiplyScalar(speed * DUCKLING_RETURN_SPEED_FACTOR));
+            const moveVector = directionToNest.clone().multiplyScalar(speed * DUCKLING_RETURN_SPEED_FACTOR);
+             if (this.canMove(moveVector)) {
+                this.position.add(moveVector);
+            }
+            // If collision, duckling just stops moving towards nest this frame
             this.rotateTowards(directionToNest);
         }
     }
@@ -200,5 +218,31 @@ export class BabyDuck extends GameObject {
     public dispose(): void {
         super.dispose(this.scene); // Call base dispose
         // Add any BabyDuck specific cleanup if needed
+    }
+
+    /**
+     * Checks if the duckling can move by the given vector without colliding.
+     * @param moveVector The intended movement vector for this frame.
+     * @returns True if the move is safe, false otherwise.
+     */
+    private canMove(moveVector: THREE.Vector3): boolean {
+        const nextPosition = this.position.clone().add(moveVector);
+        const nextPosXZ = new THREE.Vector2(nextPosition.x, nextPosition.z);
+
+        for (const obj of this.collidables) {
+             // Skip self-collision check if ducklings were added to collidables
+            if (obj.object3D === this.object3D) continue;
+            if (!obj.isCollidable || obj.boundingRadius <= 0) continue;
+
+            const objPosXZ = new THREE.Vector2(obj.position.x, obj.position.z);
+            const distance = nextPosXZ.distanceTo(objPosXZ);
+            const minDistance = this.ducklingRadius + obj.boundingRadius;
+
+            if (distance < minDistance) {
+                // console.log("BabyDuck collision detected"); // Optional logging
+                return false; // Collision detected
+            }
+        }
+        return true; // No collision detected
     }
 }

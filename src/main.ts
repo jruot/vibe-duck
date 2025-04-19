@@ -14,10 +14,9 @@ const { scene, camera, renderer, canvas } = setupScene('game-canvas');
 const gameState = new GameState();
 
 // World Elements
-// createWorld now returns instances of Nest and Pond
-const { nest } = createWorld(scene); // Only destructure 'nest' as 'pond' is unused
+// createWorld now returns Nest, Pond, and collidables list
+const { nest, collidables } = createWorld(scene); // Destructure collidables
 const nestPosition = nest.position; // Get position from the Nest instance
-// const pondPosition = pond.position; // If needed later, destructure 'pond' as well
 
 // Ducks
 const fatherDuck = createFatherDuck();
@@ -55,7 +54,8 @@ for (let i = 0; i < totalDucklings; i++) {
         fatherDuck, // Pass father duck reference
         motherDuck, // Pass mother duck reference
         nestPosition,
-        gameState
+        gameState,
+        collidables // Pass collidables list
     );
 
     babyDucks.push(babyDuck);
@@ -63,8 +63,8 @@ for (let i = 0; i < totalDucklings; i++) {
 }
 
 // Player Control
-// Pass the canvas element to the controller
-const playerController = new PlayerController(fatherDuck, camera, canvas);
+// Pass canvas and collidables list to the controller
+const playerController = new PlayerController(fatherDuck, camera, canvas, collidables);
 
 // UI Update
 const ducklingCountElement = document.getElementById('duckling-count');

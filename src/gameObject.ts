@@ -5,6 +5,8 @@ import * as THREE from 'three';
  */
 export class GameObject {
     public object3D: THREE.Object3D; // The visual representation (Mesh, Group, etc.)
+    public isCollidable: boolean = false; // Flag for collision detection participation
+    public boundingRadius: number = 0; // Approximate radius for simple collision checks
 
     constructor(object3D: THREE.Object3D) {
         this.object3D = object3D;

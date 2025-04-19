@@ -63,8 +63,9 @@ export class Tree extends GameObject {
         super(model); // Initialize GameObject with the model
 
         this.scale = scale;
-        // Retrieve bounding radius calculated in createTreeModel
-        this.boundingRadius = (model.userData as any).boundingRadius || 0.3 * scale * 1.2; // Fallback if userData fails
+        // Use the wider foliage radius for collision, seems more appropriate than trunk base
+        this.boundingRadius = 1.5 * scale; // Based on foliageRadius in createTreeModel
+        this.isCollidable = true; // Mark this object type as collidable
 
         // Set position and add to scene
         this.setPosition(position.x, position.y, position.z);
@@ -99,7 +100,8 @@ export function createTrees(
     count: number = 15,
     areaWidth: number = 200,
     areaDepth: number = 200
-): void {
+): Tree[] { // Return an array of created Tree instances
+    const trees: Tree[] = []; // Array to hold created trees
     let placedTrees = 0;
     let attempts = 0;
     const maxAttempts = count * 5; // Limit attempts
@@ -128,8 +130,9 @@ export function createTrees(
         if (distanceToPondCenterXZ > pondRadius + estimatedRadius &&
             distanceToNestCenterXZ > nestRadius + estimatedRadius)
         {
-             // If position is valid, create and add the Tree instance
-             new Tree(scene, potentialPosition, treeScale); // Constructor handles adding to scene
+             // If position is valid, create the Tree instance
+             const tree = new Tree(scene, potentialPosition, treeScale); // Constructor handles adding to scene
+             trees.push(tree); // Add to the list
              placedTrees++;
         }
         // If inside an exclusion zone, don't instantiate and try again.
@@ -138,4 +141,5 @@ export function createTrees(
     if (attempts >= maxAttempts) {
         console.warn(`createTrees: Reached max attempts (${maxAttempts}) trying to place ${count} trees. Placed ${placedTrees}.`);
     }
+    return trees; // Return the list of created trees
 }

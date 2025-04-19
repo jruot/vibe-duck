@@ -59,11 +59,19 @@ export class PlayerController {
     // Target rotation for smooth turning
     private targetQuaternion: THREE.Quaternion = new THREE.Quaternion();
     private rotationSpeed: number = Math.PI * 2; // Radians per second for smoothing player rotation
+    private collidables: GameObject[]; // List of objects to collide with
+    private playerRadius: number = 0.5; // Approximate radius for player collision
 
-    constructor(playerObject: THREE.Object3D, camera: THREE.PerspectiveCamera, canvas: HTMLCanvasElement) {
+    constructor(
+        playerObject: THREE.Object3D,
+        camera: THREE.PerspectiveCamera,
+        canvas: HTMLCanvasElement,
+        collidables: GameObject[] // Accept collidables list
+    ) {
         this.playerObject = playerObject;
         this.camera = camera;
         this.canvas = canvas; // Store canvas reference
+        this.collidables = collidables; // Store collidables list
         // Initialize target quaternion to player's current rotation
         this.targetQuaternion.copy(this.playerObject.quaternion);
         // Find wings for animation
@@ -289,10 +297,43 @@ export class PlayerController {
 
         this.velocity.y = this.verticalVelocity;
 
-        // --- Apply Movement ---
-        this.playerObject.position.add(this.velocity.clone().multiplyScalar(deltaTime));
+        // --- Collision Detection & Movement Application ---
+        const currentPosition = this.playerObject.position;
+        const moveVector = this.velocity.clone().multiplyScalar(deltaTime);
+        const nextPosition = currentPosition.clone().add(moveVector);
+
+        // Check collision with static objects (horizontal plane)
+        let collisionDetected = false;
+        const nextPosXZ = new THREE.Vector2(nextPosition.x, nextPosition.z);
+
+        for (const obj of this.collidables) {
+            if (!obj.isCollidable || obj.boundingRadius <= 0) continue;
+
+            const objPosXZ = new THREE.Vector2(obj.position.x, obj.position.z);
+            const distance = nextPosXZ.distanceTo(objPosXZ);
+            const minDistance = this.playerRadius + obj.boundingRadius;
+
+            if (distance < minDistance) {
+                collisionDetected = true;
+                // Simple stop: Prevent horizontal movement if collision occurs
+                // More advanced: Calculate sliding vector
+                console.log("Player collision detected with:", obj.object3D.name || 'Unnamed Object');
+                break; // Stop checking after first collision
+            }
+        }
+
+        // Apply horizontal movement only if no collision detected
+        if (!collisionDetected) {
+            this.playerObject.position.x = nextPosition.x;
+            this.playerObject.position.z = nextPosition.z;
+        }
+        // Apply vertical movement separately (already calculated in nextPosition.y)
+        this.playerObject.position.y = nextPosition.y;
+
 
         // --- Ground Collision ---
+        // Note: groundY needs to be defined based on raycasting if terrain is uneven
+        const groundY = 0.5; // Placeholder: Replace with raycast result if needed
         if (this.playerObject.position.y < groundY) {
             this.playerObject.position.y = groundY;
             // Don't reset vertical velocity here if a jump was just initiated
