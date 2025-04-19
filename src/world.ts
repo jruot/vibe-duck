@@ -14,9 +14,15 @@ export interface WorldData {
 }
 
 export function createWorld(scene: THREE.Scene): WorldData {
-    // Ground
-    const ground = createGround(scene);
-    // Assuming PlaneGeometry for ground to get size
+    // --- Create Pond FIRST to get its position and radius ---
+    const pond = createPond(scene);
+    const pondPosition = pond.position; // Get position from the instance
+    const pondRadius = pond.radius;     // Get radius from the instance
+
+    // --- Create Ground, passing pond data to flatten the area ---
+    const ground = createGround(scene, pondPosition, pondRadius); // Pass pond data
+
+    // Assuming PlaneGeometry for ground to get size (can still do this after creation)
     let groundWidth = 200;
     let groundHeight = 200;
     if (ground.geometry instanceof THREE.PlaneGeometry) {
@@ -26,12 +32,7 @@ export function createWorld(scene: THREE.Scene): WorldData {
         console.warn("Ground geometry is not PlaneGeometry, using default size 200x200 for object placement.");
     }
 
-
-    // Pond - Instantiate the Pond class
-    const pond = createPond(scene);
-    const pondPosition = pond.position; // Get position from the instance
-    const pondRadius = pond.radius;     // Get radius from the instance
-
+    // Pond instance is already created above
 
     // Nest - Instantiate the Nest class
     const nest = createNest(scene);

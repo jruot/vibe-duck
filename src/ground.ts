@@ -11,8 +11,13 @@ const groundWidth = 200;
 const groundDepth = 200;
 const groundSegments = 50; // Increase segments for detail
 const maxHeightVariation = 0.2; // Maximum random height offset (Reduced from 0.5)
+const pondFlatteningMargin = 1.0; // Add a small margin around the pond for flattening
 
-export function createGround(scene: THREE.Scene): THREE.Mesh {
+export function createGround(
+    scene: THREE.Scene,
+    pondPosition: THREE.Vector3, // Add pond position parameter
+    pondRadius: number          // Add pond radius parameter
+): THREE.Mesh {
     const groundGeometry = new THREE.PlaneGeometry(
         groundWidth,
         groundDepth,
@@ -20,13 +25,23 @@ export function createGround(scene: THREE.Scene): THREE.Mesh {
         groundSegments
     );
 
-    // --- Apply Slight Random Height Variation ---
+    // --- Apply Slight Random Height Variation, excluding pond area ---
     const vertices = groundGeometry.attributes.position;
+    const pondCenterXZ = new THREE.Vector2(pondPosition.x, pondPosition.z); // Pond center in plane's coordinates
+
     for (let i = 0; i < vertices.count; i++) {
-        // The Z coordinate of the plane becomes the Y coordinate (height) after rotation
-        const currentZ = vertices.getZ(i);
-        const randomOffset = (Math.random() - 0.5) * maxHeightVariation; // Random value between -maxHeight/2 and +maxHeight/2
-        vertices.setZ(i, currentZ + randomOffset);
+        const x = vertices.getX(i);
+        const y = vertices.getY(i); // Corresponds to depth (Z) before rotation
+        const vertexPosXZ = new THREE.Vector2(x, y);
+
+        // Check if the vertex is outside the pond radius (+ margin)
+        if (vertexPosXZ.distanceTo(pondCenterXZ) > pondRadius + pondFlatteningMargin) {
+            // The Z coordinate of the plane becomes the Y coordinate (height) after rotation
+            const currentZ = vertices.getZ(i); // Should be 0 for a flat plane initially
+            const randomOffset = (Math.random() - 0.5) * maxHeightVariation; // Random value between -maxHeight/2 and +maxHeight/2
+            vertices.setZ(i, currentZ + randomOffset);
+        }
+        // Else: Vertex is inside the pond area, leave its Z coordinate at 0 (flat)
     }
     groundGeometry.computeVertexNormals(); // Recalculate normals for correct lighting
 
