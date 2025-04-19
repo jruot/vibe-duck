@@ -209,10 +209,15 @@ export function createMotherDuck(): THREE.Group {
     return duck;
 }
 
-export function createBabyDuck(): THREE.Group {
+/**
+ * Creates the 3D model (THREE.Group) for a baby duck.
+ * State and behavior are handled by the BabyDuck class.
+ * @returns A THREE.Group representing the baby duck model.
+ */
+export function createBabyDuckModel(): THREE.Group {
     const babyScale = 0.4; // Much smaller
     const duck = assembleDuck(babyScale);
-    // Optional: Modify materials (e.g., fluffier look if possible without textures)
+    // Optional: Modify materials
     (duck.children[0] as THREE.Mesh).material = new THREE.MeshStandardMaterial({
          color: 0xFFFFE0, // Lighter yellow for babies
          roughness: 0.9
