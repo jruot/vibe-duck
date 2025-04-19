@@ -118,7 +118,7 @@ export class BabyDuck extends GameObject {
     }
 
 
-    private updateFollowing(deltaTime: number, speed: number): void {
+    private updateFollowing(_deltaTime: number, speed: number): void {
         if (!this.followTarget) { // Safety check
             this.state = 'idle';
             return;
