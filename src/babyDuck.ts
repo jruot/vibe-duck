@@ -1,4 +1,4 @@
-import * R THREE from 'three';
+import * as THREE from 'three';
 import { GameObject } from './gameObject';
 import { createBabyDuckModel } from './duck'; // Import the model creation function
 import { GameState } from './gameState';
