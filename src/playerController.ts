@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { GameObject } from '../src/gameObject'; // Import GameObject
 
 // Interface for tracking movement states
 interface MoveState {
@@ -332,8 +333,8 @@ export class PlayerController {
 
 
         // --- Ground Collision ---
-        // Note: groundY needs to be defined based on raycasting if terrain is uneven
-        const groundY = 0.5; // Placeholder: Replace with raycast result if needed
+        // Note: groundY was defined earlier in the function
+        // const groundY = 0.5; // Placeholder: Replace with raycast result if needed - REMOVED REDECLARATION
         if (this.playerObject.position.y < groundY) {
             this.playerObject.position.y = groundY;
             // Don't reset vertical velocity here if a jump was just initiated
