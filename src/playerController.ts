@@ -315,11 +315,19 @@ export class PlayerController {
             const minDistance = this.playerRadius + obj.boundingRadius;
 
             if (distance < minDistance) {
-                collisionDetected = true;
-                // Simple stop: Prevent horizontal movement if collision occurs
-                // More advanced: Calculate sliding vector
-                console.log("Player collision detected with:", obj.object3D.name || 'Unnamed Object');
-                break; // Stop checking after first collision
+                // Horizontal proximity detected. Now check vertical overlap.
+                const playerBaseY = nextPosition.y - 0.5; // Assuming player origin is centered, height ~1.0 (based on groundY = 0.5)
+                const obstacleTopY = obj.position.y + obj.boundingRadius; // Approximate obstacle top using bounding radius
+                const verticalBuffer = 0.1; // Small buffer to prevent clipping edges
+
+                if (playerBaseY < obstacleTopY - verticalBuffer) {
+                    // Collision confirmed: Horizontally close AND vertically overlapping
+                    collisionDetected = true;
+                    // console.log(`Collision: ${obj.object3D.name}, PlayerBaseY=${playerBaseY.toFixed(2)}, ObstacleTopY=${obstacleTopY.toFixed(2)}`);
+                    break; // Stop checking after first confirmed collision
+                }
+                // else: Horizontally close, but player is high enough to pass over. No collision.
+                // console.log(`Near miss (vertical): ${obj.object3D.name}, PlayerBaseY=${playerBaseY.toFixed(2)}, ObstacleTopY=${obstacleTopY.toFixed(2)}`);
             }
         }
 
