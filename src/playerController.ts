@@ -303,53 +303,83 @@ export class PlayerController {
         const moveVector = this.velocity.clone().multiplyScalar(deltaTime);
         const nextPosition = currentPosition.clone().add(moveVector);
 
-        // Check collision with static objects (horizontal plane)
-        let collisionDetected = false;
+        // --- Collision Detection & Movement Application ---
+        const currentPosition = this.playerObject.position;
+        const moveVector = this.velocity.clone().multiplyScalar(deltaTime);
+        const nextPosition = currentPosition.clone().add(moveVector);
+        const playerHeightOffset = 0.5; // Distance from player origin to feet
+
+        // Check collision with static objects
+        let horizontalCollisionDetected = false;
+        let verticalLandingObject: GameObject | null = null; // Object to land on
         const nextPosXZ = new THREE.Vector2(nextPosition.x, nextPosition.z);
 
         for (const obj of this.collidables) {
             if (!obj.isCollidable || obj.boundingRadius <= 0) continue;
 
             const objPosXZ = new THREE.Vector2(obj.position.x, obj.position.z);
+            const objPosXZ = new THREE.Vector2(obj.position.x, obj.position.z);
             const distance = nextPosXZ.distanceTo(objPosXZ);
-            const minDistance = this.playerRadius + obj.boundingRadius;
+            const minHorizontalDistance = this.playerRadius + obj.boundingRadius;
 
-            if (distance < minDistance) {
-                // Horizontal proximity detected. Now check vertical overlap.
-                const playerBaseY = nextPosition.y - 0.5; // Assuming player origin is centered, height ~1.0 (based on groundY = 0.5)
-                const obstacleTopY = obj.position.y + obj.boundingRadius; // Approximate obstacle top using bounding radius
-                const verticalBuffer = 0.1; // Small buffer to prevent clipping edges
+            if (distance < minHorizontalDistance) {
+                // Horizontal proximity detected. Check vertical overlap.
+                const playerBaseY = nextPosition.y - playerHeightOffset;
+                const obstacleTopY = obj.position.y + obj.boundingRadius; // Approximate obstacle top
+                const verticalBuffer = 0.1; // Small buffer
 
                 if (playerBaseY < obstacleTopY - verticalBuffer) {
-                    // Collision confirmed: Horizontally close AND vertically overlapping
-                    collisionDetected = true;
-                    // console.log(`Collision: ${obj.object3D.name}, PlayerBaseY=${playerBaseY.toFixed(2)}, ObstacleTopY=${obstacleTopY.toFixed(2)}`);
-                    break; // Stop checking after first confirmed collision
+                    // Potential collision: Horizontally close AND vertically overlapping
+                    horizontalCollisionDetected = true;
+                    // console.log(`Horizontal Collision: ${obj.object3D.name}`);
+
+                    // Check if player is moving downwards and about to land on this object
+                    if (moveVector.y < 0 && currentPosition.y >= obstacleTopY) {
+                         // Check if this is the highest object we might land on
+                        if (!verticalLandingObject || (obj.position.y + obj.boundingRadius) > (verticalLandingObject.position.y + verticalLandingObject.boundingRadius)) {
+                            verticalLandingObject = obj;
+                            // console.log(`Potential Landing On: ${obj.object3D.name}`);
+                        }
+                    }
+                    // Don't break here, need to check all objects for potential landing
                 }
-                // else: Horizontally close, but player is high enough to pass over. No collision.
-                // console.log(`Near miss (vertical): ${obj.object3D.name}, PlayerBaseY=${playerBaseY.toFixed(2)}, ObstacleTopY=${obstacleTopY.toFixed(2)}`);
+                // else: Horizontally close, but player is high enough to pass over.
             }
         }
 
-        // Apply horizontal movement only if no collision detected
-        if (!collisionDetected) {
+        // Apply horizontal movement only if no horizontal collision detected
+        if (!horizontalCollisionDetected) {
             this.playerObject.position.x = nextPosition.x;
             this.playerObject.position.z = nextPosition.z;
+        } else {
+             // If horizontal collision, stop horizontal velocity? Optional, depends on desired feel.
+             // this.velocity.x = 0;
+             // this.velocity.z = 0;
         }
-        // Apply vertical movement separately (already calculated in nextPosition.y)
-        this.playerObject.position.y = nextPosition.y;
 
+        // Apply vertical movement
+        let landedOnObject = false;
+        if (verticalLandingObject && moveVector.y < 0) {
+            // Land on the detected object
+            const landingY = verticalLandingObject.position.y + verticalLandingObject.boundingRadius + playerHeightOffset;
+            this.playerObject.position.y = landingY;
+            this.verticalVelocity = 0;
+            this.airborneJumpCount = 0;
+            landedOnObject = true;
+            // console.log(`Landed on ${verticalLandingObject.object3D.name} at Y=${landingY.toFixed(2)}`);
+        } else {
+            // Apply normal vertical movement (gravity or jump)
+            this.playerObject.position.y = nextPosition.y;
+        }
 
-        // --- Ground Collision ---
-        // Note: groundY was defined earlier in the function
-        // const groundY = 0.5; // Placeholder: Replace with raycast result if needed - REMOVED REDECLARATION
-        if (this.playerObject.position.y < groundY) {
+        // --- Ground Collision (Only if not landed on an object) ---
+        if (!landedOnObject && this.playerObject.position.y < groundY) {
             this.playerObject.position.y = groundY;
-            // Don't reset vertical velocity here if a jump was just initiated
             if (!this.isFlying) { // Only stop velocity if not actively flapping/jumping upwards
-                 this.verticalVelocity = 0;
+                this.verticalVelocity = 0;
             }
             this.airborneJumpCount = 0; // Ensure counter is reset on landing
+            // console.log("Landed on Ground");
         }
 
         // --- Wing Animation ---
