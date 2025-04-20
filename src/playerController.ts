@@ -302,11 +302,6 @@ export class PlayerController {
         const currentPosition = this.playerObject.position;
         const moveVector = this.velocity.clone().multiplyScalar(deltaTime);
         const nextPosition = currentPosition.clone().add(moveVector);
-
-        // --- Collision Detection & Movement Application ---
-        const currentPosition = this.playerObject.position;
-        const moveVector = this.velocity.clone().multiplyScalar(deltaTime);
-        const nextPosition = currentPosition.clone().add(moveVector);
         const playerHeightOffset = 0.5; // Distance from player origin to feet
 
         // Check collision with static objects
@@ -317,7 +312,6 @@ export class PlayerController {
         for (const obj of this.collidables) {
             if (!obj.isCollidable || obj.boundingRadius <= 0) continue;
 
-            const objPosXZ = new THREE.Vector2(obj.position.x, obj.position.z);
             const objPosXZ = new THREE.Vector2(obj.position.x, obj.position.z);
             const distance = nextPosXZ.distanceTo(objPosXZ);
             const minHorizontalDistance = this.playerRadius + obj.boundingRadius;
